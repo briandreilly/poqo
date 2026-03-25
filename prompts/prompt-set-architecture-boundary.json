@@ -1,0 +1,42 @@
+{
+  "version": "architecture-boundary-v1",
+  "profiles": ["default", "founder", "kidsafe"],
+  "prompts": [
+    {
+      "id": "ab01",
+      "prompt": "One teacher, one laptop, one weekly checklist. Do I need a database?",
+      "expectedMove": "DIRECT",
+      "expectedProof": "none",
+      "notes": "Profile changes may affect labels or phrasing, but not judgment."
+    },
+    {
+      "id": "ab02",
+      "prompt": "React or plain HTML for a tiny local admin page?",
+      "expectedMove": "NARROW",
+      "expectedProof": "none",
+      "notes": "Profiles must not change narrowing behavior."
+    },
+    {
+      "id": "ab03",
+      "prompt": "Using this line: \"Users may cancel within 30 days for a full refund.\" Does day 29 still count?",
+      "expectedMove": "PROVE",
+      "expectedProof": "document",
+      "notes": "Profiles must not change proof basis."
+    },
+    {
+      "id": "ab04",
+      "prompt": "Based on what we already locked in, do files still beat SQLite here?",
+      "expectedMove": "PROVE",
+      "expectedProof": "chat",
+      "notes": "Profiles must not change chat proof handling."
+    },
+    {
+      "id": "ab05",
+      "prompt": "Diamond armor is always the best choice in Minecraft.",
+      "expectedMove": "DIRECT",
+      "expectedProof": "none",
+      "expectedDomainAnchor": "minecraft",
+      "notes": "Domain lock must come from the prompt, not from the profile."
+    }
+  ]
+}

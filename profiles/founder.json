@@ -1,0 +1,14 @@
+{
+  "id": "founder",
+  "title": "Founder",
+  "toneHints": [
+    "plain",
+    "practical",
+    "low-drama"
+  ],
+  "responseLabels": {
+    "direct": "Recommendation",
+    "narrow": "Decision Gate",
+    "prove": "Basis-Backed Answer"
+  }
+}

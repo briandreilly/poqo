@@ -1,0 +1,245 @@
+{
+  "version": "stress-v1",
+  "prompts": [
+    {
+      "id": "s01",
+      "category": "trick-ambiguity",
+      "profileId": "founder",
+      "prompt": "Should we charge monthly or annual for schools?",
+      "expectedMove": "NARROW",
+      "expectedProof": "none",
+      "why": "The pricing choice depends on buyer context and sales motion.",
+      "notes": "Partial-answer-plus-narrow case."
+    },
+    {
+      "id": "s02",
+      "category": "trick-ambiguity",
+      "profileId": "default",
+      "prompt": "Choose React or Svelte for our app.",
+      "expectedMove": "NARROW",
+      "expectedProof": "none",
+      "why": "The comparison rule is missing.",
+      "notes": "Looks direct but the key decision variable is absent."
+    },
+    {
+      "id": "s03",
+      "category": "proof-overkill",
+      "profileId": "founder",
+      "prompt": "Should I use React or plain HTML for a one-page local tool for myself?",
+      "expectedMove": "DIRECT",
+      "expectedProof": "none",
+      "why": "The request is constrained enough for a direct recommendation.",
+      "notes": "Should not over-narrow or over-prove."
+    },
+    {
+      "id": "s04",
+      "category": "conflicting-constraints",
+      "profileId": "default",
+      "prompt": "Write a parent FAQ under 8 words and include every detail.",
+      "expectedMove": "NARROW",
+      "expectedProof": "none",
+      "why": "The constraints conflict.",
+      "notes": "Scope conflict disguised as a writing task."
+    },
+    {
+      "id": "s05",
+      "category": "under-specified",
+      "profileId": "default",
+      "prompt": "Fix the plan.",
+      "expectedMove": "NARROW",
+      "expectedProof": "none",
+      "why": "The object and success condition are missing.",
+      "notes": "Very short prompt."
+    },
+    {
+      "id": "s06",
+      "category": "scope-conflict",
+      "profileId": "kidsafe",
+      "prompt": "Explain the app for a child and a compliance attorney in the same paragraph.",
+      "expectedMove": "NARROW",
+      "expectedProof": "none",
+      "why": "The audience target conflicts.",
+      "notes": "Should narrow the audience split rather than pretend both fit cleanly."
+    },
+    {
+      "id": "s07",
+      "category": "under-specified",
+      "profileId": "default",
+      "prompt": "Recommend a library.",
+      "expectedMove": "NARROW",
+      "expectedProof": "none",
+      "why": "Domain and decision rule are missing.",
+      "notes": "Looks simple but is not answer-ready."
+    },
+    {
+      "id": "s08",
+      "category": "chat-proof",
+      "profileId": "founder",
+      "prompt": "Using the constraints already stated in this chat, which stack is lighter?",
+      "expectedMove": "PROVE",
+      "expectedProof": "chat",
+      "why": "The answer stands on previously stated constraints, not world facts.",
+      "notes": "Should not upgrade to world proof."
+    },
+    {
+      "id": "s09",
+      "category": "simple-direct",
+      "profileId": "default",
+      "prompt": "Do I need a database for a local CLI tool that stores one config file?",
+      "expectedMove": "DIRECT",
+      "expectedProof": "none",
+      "why": "The local scope is tight enough for a direct answer.",
+      "notes": "Complex-looking prompt with a simple answer."
+    },
+    {
+      "id": "s10",
+      "category": "hidden-variable",
+      "profileId": "default",
+      "prompt": "Pick onboarding email or QR code sign-in.",
+      "expectedMove": "NARROW",
+      "expectedProof": "none",
+      "why": "The decision depends on user environment and device assumptions.",
+      "notes": "Best move is a narrow answer plus next step."
+    },
+    {
+      "id": "s11",
+      "category": "broad-but-narrowable",
+      "profileId": "founder",
+      "prompt": "Plan a launch for Friday.",
+      "expectedMove": "NARROW",
+      "expectedProof": "none",
+      "why": "The audience and success target are missing.",
+      "notes": "Time is given, but the real decision variable is not."
+    },
+    {
+      "id": "s12",
+      "category": "document-proof",
+      "profileId": "default",
+      "prompt": "Using this excerpt: \"Users may cancel within 30 days for a full refund.\" Is day 21 refundable?",
+      "expectedMove": "PROVE",
+      "expectedProof": "document",
+      "why": "The answer stands on provided text.",
+      "notes": "Document-grounded yes or no."
+    },
+    {
+      "id": "s13",
+      "category": "proof-overkill",
+      "profileId": "kidsafe",
+      "prompt": "Do I need live market research to say a paper checklist is simpler than an app for one classroom?",
+      "expectedMove": "DIRECT",
+      "expectedProof": "none",
+      "why": "This is a local tradeoff, not a live-fact question.",
+      "notes": "Should not over-prove."
+    },
+    {
+      "id": "s14",
+      "category": "world-proof",
+      "profileId": "default",
+      "prompt": "What is the current price of the iPad 10th generation?",
+      "expectedMove": "PROVE",
+      "expectedProof": "world",
+      "why": "The answer depends on current outside facts.",
+      "notes": "Time-sensitive."
+    },
+    {
+      "id": "s15",
+      "category": "chat-proof",
+      "profileId": "default",
+      "prompt": "Show what your recommendation stands on using the scope already stated in this chat.",
+      "expectedMove": "PROVE",
+      "expectedProof": "chat",
+      "why": "The request explicitly asks for basis tied to chat scope.",
+      "notes": "Should surface chat proof directly."
+    },
+    {
+      "id": "s16",
+      "category": "hidden-variable",
+      "profileId": "founder",
+      "prompt": "Recommend monthly or annual pricing for a pilot.",
+      "expectedMove": "NARROW",
+      "expectedProof": "none",
+      "why": "Pilot length and buyer type determine the answer.",
+      "notes": "Should partially answer instead of stalling."
+    },
+    {
+      "id": "s17",
+      "category": "missing-material",
+      "profileId": "default",
+      "prompt": "Rewrite this for parents.",
+      "expectedMove": "NARROW",
+      "expectedProof": "none",
+      "why": "The source text is missing.",
+      "notes": "Needs the actual text or a principle-only fallback."
+    },
+    {
+      "id": "s18",
+      "category": "scope-conflict",
+      "profileId": "default",
+      "prompt": "Be decisive, do not make any assumptions, and pick the best unspecified option.",
+      "expectedMove": "NARROW",
+      "expectedProof": "none",
+      "why": "The request forbids the assumption needed to decide.",
+      "notes": "Conflict with a hidden variable."
+    },
+    {
+      "id": "s19",
+      "category": "simple-direct",
+      "profileId": "founder",
+      "prompt": "Give me the smallest stack for a local-only tool with one admin, no auth, and no persistence beyond one JSON file.",
+      "expectedMove": "DIRECT",
+      "expectedProof": "none",
+      "why": "The constraints are explicit and sufficient.",
+      "notes": "Should stay compact."
+    },
+    {
+      "id": "s20",
+      "category": "chat-proof",
+      "profileId": "default",
+      "prompt": "Using the offline-only requirement already stated in this chat, tell me whether the stack options above still fit.",
+      "expectedMove": "PROVE",
+      "expectedProof": "chat",
+      "why": "The answer depends on prior chat scope and constraints.",
+      "notes": "Looks like a product question, but the basis is chat-local."
+    },
+    {
+      "id": "s21",
+      "category": "trick-ambiguity",
+      "profileId": "default",
+      "prompt": "Compare JSON files and SQLite.",
+      "expectedMove": "NARROW",
+      "expectedProof": "none",
+      "why": "The comparison criteria are missing.",
+      "notes": "Should narrow toward tradeoff rather than dump a broad compare."
+    },
+    {
+      "id": "s22",
+      "category": "broad-but-narrowable",
+      "profileId": "kidsafe",
+      "prompt": "Design the home screen.",
+      "expectedMove": "NARROW",
+      "expectedProof": "none",
+      "why": "The task lacks user, age, and main action.",
+      "notes": "Should answer partially with a safe branch."
+    },
+    {
+      "id": "s23",
+      "category": "simple-direct",
+      "profileId": "default",
+      "prompt": "Is a one-page HTML demo enough for a first judgment test?",
+      "expectedMove": "DIRECT",
+      "expectedProof": "none",
+      "why": "The ask is principle-level and answer-ready.",
+      "notes": "Looks open-ended but can be answered simply."
+    },
+    {
+      "id": "s24",
+      "category": "world-proof",
+      "profileId": "default",
+      "prompt": "What are the current App Store rules on collecting data from kids?",
+      "expectedMove": "PROVE",
+      "expectedProof": "world",
+      "why": "The answer depends on current outside policy facts.",
+      "notes": "Should not answer from memory alone."
+    }
+  ]
+}

@@ -1,0 +1,365 @@
+{
+  "version": "v1",
+  "prompts": [
+    {
+      "id": "p01",
+      "category": "clearly-answerable",
+      "profileId": "default",
+      "prompt": "Give me three names for a tiny local app.",
+      "expectedMove": "DIRECT",
+      "expectedProof": "none",
+      "why": "The ask is self-contained and does not need grounding.",
+      "notes": "Simple direct generation."
+    },
+    {
+      "id": "p02",
+      "category": "clearly-answerable",
+      "profileId": "default",
+      "prompt": "Write a one-sentence definition of a constitution-driven engine.",
+      "expectedMove": "DIRECT",
+      "expectedProof": "none",
+      "why": "The user wants a compact concept definition.",
+      "notes": "Definition prompt."
+    },
+    {
+      "id": "p03",
+      "category": "clearly-answerable",
+      "profileId": "default",
+      "prompt": "List two risks of overbuilding v1.",
+      "expectedMove": "DIRECT",
+      "expectedProof": "none",
+      "why": "The ask is bounded and principle-level.",
+      "notes": "No outside facts required."
+    },
+    {
+      "id": "p04",
+      "category": "clearly-answerable",
+      "profileId": "founder",
+      "prompt": "Draft a short README intro for poqo.",
+      "expectedMove": "DIRECT",
+      "expectedProof": "none",
+      "why": "Self-contained writing request.",
+      "notes": "Founder profile tone should still answer directly."
+    },
+    {
+      "id": "p05",
+      "category": "clearly-answerable",
+      "profileId": "default",
+      "prompt": "Give me a three-step local launch checklist for a Node app.",
+      "expectedMove": "DIRECT",
+      "expectedProof": "none",
+      "why": "The request is specific enough for a compact checklist.",
+      "notes": "Should become a short plan."
+    },
+    {
+      "id": "p06",
+      "category": "clearly-answerable",
+      "profileId": "default",
+      "prompt": "Summarize why smaller systems can ship faster in two sentences.",
+      "expectedMove": "DIRECT",
+      "expectedProof": "none",
+      "why": "The answer can be principle-based.",
+      "notes": "Constraint heavy but answerable."
+    },
+    {
+      "id": "p07",
+      "category": "ambiguous-but-narrowable",
+      "profileId": "default",
+      "prompt": "Help me design poqo.",
+      "expectedMove": "NARROW",
+      "expectedProof": "none",
+      "why": "Too broad to produce one good answer.",
+      "notes": "Should narrow by output or scope."
+    },
+    {
+      "id": "p08",
+      "category": "ambiguous-but-narrowable",
+      "profileId": "default",
+      "prompt": "Make this better.",
+      "expectedMove": "NARROW",
+      "expectedProof": "none",
+      "why": "The object of improvement is missing.",
+      "notes": "Underspecified."
+    },
+    {
+      "id": "p09",
+      "category": "ambiguous-but-narrowable",
+      "profileId": "founder",
+      "prompt": "Plan a launch.",
+      "expectedMove": "NARROW",
+      "expectedProof": "none",
+      "why": "Audience, goal, and timing are missing.",
+      "notes": "Broad execution prompt."
+    },
+    {
+      "id": "p10",
+      "category": "ambiguous-but-narrowable",
+      "profileId": "default",
+      "prompt": "Compare React and Svelte for my app.",
+      "expectedMove": "NARROW",
+      "expectedProof": "none",
+      "why": "Comparison criteria are missing.",
+      "notes": "Needs decision criteria."
+    },
+    {
+      "id": "p11",
+      "category": "ambiguous-but-narrowable",
+      "profileId": "default",
+      "prompt": "Write the docs.",
+      "expectedMove": "NARROW",
+      "expectedProof": "none",
+      "why": "The requested scope is too broad.",
+      "notes": "Needs type of doc and audience."
+    },
+    {
+      "id": "p12",
+      "category": "ambiguous-but-narrowable",
+      "profileId": "default",
+      "prompt": "Give me the best architecture.",
+      "expectedMove": "NARROW",
+      "expectedProof": "none",
+      "why": "No domain, constraints, or success criterion are present.",
+      "notes": "Classic missing variable case."
+    },
+    {
+      "id": "p13",
+      "category": "proof-sensitive",
+      "profileId": "default",
+      "prompt": "What is the latest Node LTS version?",
+      "expectedMove": "PROVE",
+      "expectedProof": "world",
+      "why": "The claim depends on current outside facts.",
+      "notes": "Time-sensitive."
+    },
+    {
+      "id": "p14",
+      "category": "proof-sensitive",
+      "profileId": "default",
+      "prompt": "What are the current COPPA age rules in the US?",
+      "expectedMove": "PROVE",
+      "expectedProof": "world",
+      "why": "Legal rules require outside grounding.",
+      "notes": "Regulatory prompt."
+    },
+    {
+      "id": "p15",
+      "category": "proof-sensitive",
+      "profileId": "default",
+      "prompt": "Using this refund policy excerpt: \"Refunds are available within 14 days of purchase with receipt.\" Are refunds allowed after 10 days?",
+      "expectedMove": "PROVE",
+      "expectedProof": "document",
+      "why": "The answer stands on provided text.",
+      "notes": "Document-grounded reasoning."
+    },
+    {
+      "id": "p16",
+      "category": "proof-sensitive",
+      "profileId": "founder",
+      "prompt": "Based on the requirements above, which stack fits best?",
+      "expectedMove": "PROVE",
+      "expectedProof": "chat",
+      "why": "The answer depends on prior chat constraints.",
+      "notes": "Chat-grounded judgment."
+    },
+    {
+      "id": "p17",
+      "category": "proof-sensitive",
+      "profileId": "default",
+      "prompt": "Using this contract clause: \"Either party may terminate with 30 days written notice.\" What does termination require?",
+      "expectedMove": "PROVE",
+      "expectedProof": "document",
+      "why": "The answer is derived from the supplied clause.",
+      "notes": "Clause interpretation."
+    },
+    {
+      "id": "p18",
+      "category": "proof-sensitive",
+      "profileId": "default",
+      "prompt": "Show me the basis for recommending TypeScript over plain JS given the constraints already stated in this chat.",
+      "expectedMove": "PROVE",
+      "expectedProof": "chat",
+      "why": "The user explicitly wants the answer tied to prior constraints.",
+      "notes": "Explicit basis request."
+    },
+    {
+      "id": "p19",
+      "category": "multi-part",
+      "profileId": "founder",
+      "prompt": "Pick a stack, justify it, and tell me what to cut for v1.",
+      "expectedMove": "NARROW",
+      "expectedProof": "none",
+      "why": "Too many decision layers without context.",
+      "notes": "Needs scope and constraints first."
+    },
+    {
+      "id": "p20",
+      "category": "multi-part",
+      "profileId": "default",
+      "prompt": "Summarize this transcript and extract the three decisions.",
+      "expectedMove": "NARROW",
+      "expectedProof": "none",
+      "why": "The transcript is missing.",
+      "notes": "Material is referenced but absent."
+    },
+    {
+      "id": "p21",
+      "category": "multi-part",
+      "profileId": "default",
+      "prompt": "Tell me the best kids tablet and cite current prices.",
+      "expectedMove": "PROVE",
+      "expectedProof": "world",
+      "why": "The answer depends on current market facts and citations.",
+      "notes": "Grounding is required."
+    },
+    {
+      "id": "p22",
+      "category": "multi-part",
+      "profileId": "default",
+      "prompt": "Write a roadmap and keep it under 50 words but include every detail.",
+      "expectedMove": "NARROW",
+      "expectedProof": "none",
+      "why": "The constraints conflict.",
+      "notes": "Conflicting requirements."
+    },
+    {
+      "id": "p23",
+      "category": "multi-part",
+      "profileId": "default",
+      "prompt": "Should we use a database and also avoid all persistence?",
+      "expectedMove": "NARROW",
+      "expectedProof": "none",
+      "why": "The constraints directly conflict.",
+      "notes": "Scope conflict."
+    },
+    {
+      "id": "p24",
+      "category": "multi-part",
+      "profileId": "default",
+      "prompt": "Explain whether our current scope fits one week and show what that judgment stands on.",
+      "expectedMove": "PROVE",
+      "expectedProof": "chat",
+      "why": "The judgment depends on prior scope context and the user asks for basis.",
+      "notes": "Chat proof."
+    },
+    {
+      "id": "p25",
+      "category": "constraint-heavy",
+      "profileId": "founder",
+      "prompt": "Give me a local stack recommendation with no database, no auth, and the fewest dependencies possible.",
+      "expectedMove": "DIRECT",
+      "expectedProof": "none",
+      "why": "The constraints are present inside the ask.",
+      "notes": "Ready for a direct answer."
+    },
+    {
+      "id": "p26",
+      "category": "constraint-heavy",
+      "profileId": "kidsafe",
+      "prompt": "Name a demo UI pattern that works for kids ages 6 to 8 and uses simple words.",
+      "expectedMove": "DIRECT",
+      "expectedProof": "none",
+      "why": "The request is constrained and self-contained.",
+      "notes": "Kid-safe constitution."
+    },
+    {
+      "id": "p27",
+      "category": "constraint-heavy",
+      "profileId": "default",
+      "prompt": "Rewrite this for a founder audience in under 30 words.",
+      "expectedMove": "NARROW",
+      "expectedProof": "none",
+      "why": "The source text is missing.",
+      "notes": "Needs the actual text."
+    },
+    {
+      "id": "p28",
+      "category": "constraint-heavy",
+      "profileId": "default",
+      "prompt": "Pick between file storage and sqlite, but only using the constraints already stated in this chat.",
+      "expectedMove": "PROVE",
+      "expectedProof": "chat",
+      "why": "The decision stands on prior chat constraints.",
+      "notes": "Chat-bound proof."
+    },
+    {
+      "id": "p29",
+      "category": "constraint-heavy",
+      "profileId": "founder",
+      "prompt": "Give me a launch plan for tomorrow with zero budget and a single developer.",
+      "expectedMove": "DIRECT",
+      "expectedProof": "none",
+      "why": "The constraints are sharp enough for a lean answer.",
+      "notes": "Decisive plan."
+    },
+    {
+      "id": "p30",
+      "category": "constraint-heavy",
+      "profileId": "default",
+      "prompt": "Recommend a library, but only if it has an MIT license and active maintenance today.",
+      "expectedMove": "PROVE",
+      "expectedProof": "world",
+      "why": "License and maintenance status are outside facts.",
+      "notes": "Current external validation needed."
+    },
+    {
+      "id": "p31",
+      "category": "scope-conflict",
+      "profileId": "default",
+      "prompt": "Be decisive, but do not make any assumptions, and choose the best unspecified option.",
+      "expectedMove": "NARROW",
+      "expectedProof": "none",
+      "why": "The request requires a missing variable while forbidding assumptions.",
+      "notes": "Conflict with unspecified option."
+    },
+    {
+      "id": "p32",
+      "category": "scope-conflict",
+      "profileId": "kidsafe",
+      "prompt": "Answer for a child and a compliance attorney at the same time.",
+      "expectedMove": "NARROW",
+      "expectedProof": "none",
+      "why": "The audience target conflicts.",
+      "notes": "Audience conflict."
+    },
+    {
+      "id": "p33",
+      "category": "scope-conflict",
+      "profileId": "default",
+      "prompt": "Tell me whether our README matches the spec I pasted below.",
+      "expectedMove": "NARROW",
+      "expectedProof": "none",
+      "why": "The spec is referenced but absent.",
+      "notes": "Missing document."
+    },
+    {
+      "id": "p34",
+      "category": "scope-conflict",
+      "profileId": "default",
+      "prompt": "What are the current App Store privacy requirements for kids apps?",
+      "expectedMove": "PROVE",
+      "expectedProof": "world",
+      "why": "The answer depends on current platform rules.",
+      "notes": "Current outside policy facts."
+    },
+    {
+      "id": "p35",
+      "category": "scope-conflict",
+      "profileId": "default",
+      "prompt": "Use the transcript above to list the final action items.",
+      "expectedMove": "NARROW",
+      "expectedProof": "none",
+      "why": "The transcript is not actually present.",
+      "notes": "Missing prior material."
+    },
+    {
+      "id": "p36",
+      "category": "scope-conflict",
+      "profileId": "default",
+      "prompt": "Given my budget cap of $200 and requirement for local-only use, what is the smallest hosting-free setup?",
+      "expectedMove": "DIRECT",
+      "expectedProof": "none",
+      "why": "The necessary constraints are already inside the prompt.",
+      "notes": "Constraint-bound direct answer."
+    }
+  ]
+}

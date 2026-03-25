@@ -1,0 +1,255 @@
+{
+  "version": "redteam-v1",
+  "prompts": [
+    {
+      "id": "r01",
+      "category": "messy-choice",
+      "profileId": "founder",
+      "prompt": "I've got maybe ten days, no backend person, and zero patience for a science project. React or plain HTML?",
+      "expectedMove": "NARROW",
+      "expectedProof": "none",
+      "why": "The answer still depends on interaction complexity, not just the urgency.",
+      "notes": "Urgent wording that still hides the decision rule."
+    },
+    {
+      "id": "r02",
+      "category": "simple-direct",
+      "profileId": "default",
+      "prompt": "Be honest, am I being dumb for even thinking about a database if it's one operator and a few dozen records?",
+      "expectedMove": "DIRECT",
+      "expectedProof": "none",
+      "why": "The scope is tight enough for a direct answer.",
+      "notes": "Sounds bigger than it is."
+    },
+    {
+      "id": "r03",
+      "category": "chat-proof",
+      "profileId": "default",
+      "prompt": "Given the rules we already agreed on, does this still look file-based to you or am I missing something?",
+      "expectedMove": "PROVE",
+      "expectedProof": "chat",
+      "why": "The answer stands on prior chat constraints.",
+      "notes": "Messy phrasing with implicit comparison."
+    },
+    {
+      "id": "r04",
+      "category": "missing-material",
+      "profileId": "default",
+      "prompt": "Can you rewrite this so it doesn't sound like it was written by a committee?",
+      "expectedMove": "NARROW",
+      "expectedProof": "none",
+      "why": "The source text is missing.",
+      "notes": "Tempts generic clarification if the system is weak."
+    },
+    {
+      "id": "r05",
+      "category": "world-proof",
+      "profileId": "default",
+      "prompt": "What's Apple actually saying right now about kid data collection?",
+      "expectedMove": "PROVE",
+      "expectedProof": "world",
+      "why": "The answer depends on current outside policy facts.",
+      "notes": "Casual, harsher wording of a live-rules question."
+    },
+    {
+      "id": "r06",
+      "category": "audience-tension",
+      "profileId": "default",
+      "prompt": "I need the same first screen to make sense to a kid and a parent at the same time.",
+      "expectedMove": "NARROW",
+      "expectedProof": "none",
+      "why": "The audience target pulls in two directions.",
+      "notes": "The conflict is there, but the user is not naming it cleanly."
+    },
+    {
+      "id": "r07",
+      "category": "chat-proof",
+      "profileId": "default",
+      "prompt": "Would you still keep this to files if the no-login rule from earlier is real?",
+      "expectedMove": "PROVE",
+      "expectedProof": "chat",
+      "why": "The answer depends on a prior stated constraint.",
+      "notes": "Should stay chat-bound, not drift into general best practice."
+    },
+    {
+      "id": "r08",
+      "category": "decision-under-uncertainty",
+      "profileId": "founder",
+      "prompt": "I'm trying not to be precious here. Should we go monthly or annual for the first school pilot?",
+      "expectedMove": "NARROW",
+      "expectedProof": "none",
+      "why": "Pilot length and buyer behavior still control the answer.",
+      "notes": "Should narrow with momentum, not stall."
+    },
+    {
+      "id": "r09",
+      "category": "simple-direct",
+      "profileId": "founder",
+      "prompt": "Do I actually need anything more than a form and a results page to learn something real?",
+      "expectedMove": "DIRECT",
+      "expectedProof": "none",
+      "why": "The next move is a direct scope answer.",
+      "notes": "Complex-sounding doubt with a simple next step."
+    },
+    {
+      "id": "r10",
+      "category": "hidden-conflict",
+      "profileId": "default",
+      "prompt": "I want it tiny but I also want it to cover every future use case so I don't repaint this later.",
+      "expectedMove": "NARROW",
+      "expectedProof": "none",
+      "why": "The prompt hides a direct scope conflict.",
+      "notes": "Baits an overconfident direct answer."
+    },
+    {
+      "id": "r11",
+      "category": "document-proof",
+      "profileId": "default",
+      "prompt": "Using this line: \"Users may cancel within 30 days for a full refund.\" Does day 29 still count?",
+      "expectedMove": "PROVE",
+      "expectedProof": "document",
+      "why": "The answer stands on provided text.",
+      "notes": "Everyday contract-style wording."
+    },
+    {
+      "id": "r12",
+      "category": "chat-proof",
+      "profileId": "default",
+      "prompt": "Tell me what the recommendation is actually standing on here, based on what we've already locked in.",
+      "expectedMove": "PROVE",
+      "expectedProof": "chat",
+      "why": "The user explicitly wants visible support tied to prior chat scope.",
+      "notes": "Proof-sensitive without any world lookup need."
+    },
+    {
+      "id": "r13",
+      "category": "messy-choice",
+      "profileId": "founder",
+      "prompt": "I need a recommendation, not a framework war. React or Svelte for a tiny local thing?",
+      "expectedMove": "NARROW",
+      "expectedProof": "none",
+      "why": "The decision rule is still missing.",
+      "notes": "Tone pressure should not force a bad DIRECT move."
+    },
+    {
+      "id": "r14",
+      "category": "simple-direct",
+      "profileId": "founder",
+      "prompt": "I'm missing something here: local tool, one admin, few dozen records, no auth. Is SQLite already too much?",
+      "expectedMove": "DIRECT",
+      "expectedProof": "none",
+      "why": "The constraints are explicit and tight.",
+      "notes": "Harsher but still answer-ready."
+    },
+    {
+      "id": "r15",
+      "category": "messy-broad",
+      "profileId": "kidsafe",
+      "prompt": "Help me figure out what the real question even is on the home screen.",
+      "expectedMove": "NARROW",
+      "expectedProof": "none",
+      "why": "The user is under-specified but still asking for forward motion.",
+      "notes": "Should not fall back to generic clarification."
+    },
+    {
+      "id": "r16",
+      "category": "world-proof",
+      "profileId": "default",
+      "prompt": "Current COPPA rules are the thing blocking me. What do I actually need to verify?",
+      "expectedMove": "PROVE",
+      "expectedProof": "world",
+      "why": "The answer depends on current external rules.",
+      "notes": "World-sensitive but phrased as anxiety, not as a fact query."
+    },
+    {
+      "id": "r17",
+      "category": "hidden-conflict",
+      "profileId": "default",
+      "prompt": "I need this polished this week and still not overbuilt.",
+      "expectedMove": "NARROW",
+      "expectedProof": "none",
+      "why": "The prompt hides a tension between polish and time.",
+      "notes": "Should narrow toward what is actually non-negotiable."
+    },
+    {
+      "id": "r18",
+      "category": "simple-direct",
+      "profileId": "founder",
+      "prompt": "Be straight with me: is plain HTML first a reasonable move or am I just dodging real work?",
+      "expectedMove": "DIRECT",
+      "expectedProof": "none",
+      "why": "The next move is a direct v1-scope call.",
+      "notes": "Emotionally loaded, but still answer-ready."
+    },
+    {
+      "id": "r19",
+      "category": "chat-proof",
+      "profileId": "default",
+      "prompt": "We already agreed it has to stay local. Does that basically kill the fancier stack idea?",
+      "expectedMove": "PROVE",
+      "expectedProof": "chat",
+      "why": "The answer stands on the previously agreed local-only constraint.",
+      "notes": "Should not drift into a broad architecture lecture."
+    },
+    {
+      "id": "r20",
+      "category": "world-proof",
+      "profileId": "default",
+      "prompt": "What's the current price range for the iPads schools actually buy?",
+      "expectedMove": "PROVE",
+      "expectedProof": "world",
+      "why": "The answer depends on current outside facts.",
+      "notes": "Market language instead of evaluator language."
+    },
+    {
+      "id": "r21",
+      "category": "mixed-intent",
+      "profileId": "founder",
+      "prompt": "I need the smallest thing that doesn't embarrass me in front of a principal tomorrow.",
+      "expectedMove": "DIRECT",
+      "expectedProof": "none",
+      "why": "The prompt is vague emotionally, but the next move is still a direct smallest-v1 answer.",
+      "notes": "Uncomfortable but answerable."
+    },
+    {
+      "id": "r22",
+      "category": "forward-motion-direct",
+      "profileId": "default",
+      "prompt": "I'm not asking for perfection, I just need the next sane move. What should I ask before I pick pricing?",
+      "expectedMove": "DIRECT",
+      "expectedProof": "none",
+      "why": "The user is explicitly asking for decision-shaping questions.",
+      "notes": "Should create forward motion immediately."
+    },
+    {
+      "id": "r23",
+      "category": "chat-proof",
+      "profileId": "default",
+      "prompt": "Can you compare JSON files and SQLite using only the constraints we've already nailed down?",
+      "expectedMove": "PROVE",
+      "expectedProof": "chat",
+      "why": "The comparison is bounded by prior chat constraints, so the basis is chat-local.",
+      "notes": "This is a good bait prompt for over-narrowing."
+    },
+    {
+      "id": "r24",
+      "category": "plain-language",
+      "profileId": "kidsafe",
+      "prompt": "I need one line for a parent and one for a kid. Don't make it weird.",
+      "expectedMove": "DIRECT",
+      "expectedProof": "none",
+      "why": "The user is asking for simple generated output with enough structure to answer.",
+      "notes": "Should stay direct and useful."
+    },
+    {
+      "id": "r25",
+      "category": "decision-under-uncertainty",
+      "profileId": "founder",
+      "prompt": "Tell me if I'm overthinking this: should I just ship the boring version first?",
+      "expectedMove": "DIRECT",
+      "expectedProof": "none",
+      "why": "The practical next move is a direct recommendation.",
+      "notes": "Tempts hand-wavy advice, but the correct move is compact and direct."
+    }
+  ]
+}

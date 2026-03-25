@@ -1,0 +1,23 @@
+{
+  "name": "poqo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "arch:check": "npm run build && node dist/src/architecture/check.js",
+    "demo": "npm run build && node dist/src/demo/server.js",
+    "eval": "npm run build && node dist/src/evaluator/run.js v1",
+    "eval:v1": "npm run build && node dist/src/evaluator/run.js v1",
+    "eval:stress": "npm run build && node dist/src/evaluator/run.js stress",
+    "eval:blind": "npm run build && node dist/src/evaluator/run.js blind",
+    "eval:redteam": "npm run build && node dist/src/evaluator/run.js redteam",
+    "eval:variance": "npm run build && node dist/src/evaluator/run.js variance",
+    "eval:all": "npm run build && node dist/src/evaluator/run.js all",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.1",
+    "typescript": "^5.8.3"
+  }
+}

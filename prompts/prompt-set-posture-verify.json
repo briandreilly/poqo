@@ -1,0 +1,54 @@
+{
+  "version": "1",
+  "purpose": "Manual same-prompt / three-mode verification set. Routing should stay stable while calm, counter, and blunt posture remain visibly distinct.",
+  "prompts": [
+    {
+      "id": "pv01",
+      "prompt": "Saving money is more important than investing it.",
+      "expectedMove": "DIRECT",
+      "expectedProof": "none",
+      "why": "Value claim for calm vs counter vs blunt comparison.",
+      "notes": "calm strengthens; counter qualifies or pressures; blunt rejects and replaces"
+    },
+    {
+      "id": "pv02",
+      "prompt": "Social media is toxic.",
+      "expectedMove": "DIRECT",
+      "expectedProof": "none",
+      "why": "Social claim for same-prompt posture comparison.",
+      "notes": "calm stays in frame; counter pressures weak points; blunt rejects and replaces"
+    },
+    {
+      "id": "pv03",
+      "prompt": "Remote work has made managers less effective.",
+      "expectedMove": "DIRECT",
+      "expectedProof": "none",
+      "why": "Work claim for same-prompt posture comparison.",
+      "notes": "routing should remain DIRECT across all three modes"
+    },
+    {
+      "id": "pv04",
+      "prompt": "This product feels unfinished.",
+      "expectedMove": "NARROW",
+      "expectedProof": "none",
+      "why": "Product claim that should keep the same NARROW move while posture shifts.",
+      "notes": "calm asks softly; counter presses; blunt sharpens the missing variable"
+    },
+    {
+      "id": "pv05",
+      "prompt": "Modern art is overrated.",
+      "expectedMove": "DIRECT",
+      "expectedProof": "none",
+      "why": "Cultural claim for same-prompt posture comparison.",
+      "notes": "useful for checking that calm and blunt do not collapse together"
+    },
+    {
+      "id": "pv06",
+      "prompt": "Barack Obama lacks moral character.",
+      "expectedMove": "NARROW",
+      "expectedProof": "none",
+      "why": "Unsupported stance claim that should keep the same routing move across all three modes.",
+      "notes": "calm basis question; counter firmer basis question; blunt sharp basis question"
+    }
+  ]
+}

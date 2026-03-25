@@ -1,0 +1,215 @@
+{
+  "version": "profile-variance-v1",
+  "prompts": [
+    {
+      "id": "cv01",
+      "category": "direct-stable",
+      "prompt": "One teacher, one laptop, one weekly checklist. Do I need a database?",
+      "expectedMove": "DIRECT",
+      "expectedProof": "none",
+      "why": "The scope is concrete and small enough for a direct answer across profiles.",
+      "notes": "Tone may vary, but routing should not.",
+      "profilesToRun": ["default", "founder", "kidsafe"]
+    },
+    {
+      "id": "cv02",
+      "category": "direct-stable",
+      "prompt": "Give me two names for a tiny local judgment tool.",
+      "expectedMove": "DIRECT",
+      "expectedProof": "none",
+      "why": "This is a simple generation request with enough structure to answer directly.",
+      "notes": "A profile may shape style but should not create fake complexity.",
+      "profilesToRun": ["default", "founder", "kidsafe"]
+    },
+    {
+      "id": "cv03",
+      "category": "narrow-stable",
+      "prompt": "React or plain HTML for a tiny local admin page?",
+      "expectedMove": "NARROW",
+      "expectedProof": "none",
+      "why": "The decision still depends on interaction complexity.",
+      "notes": "Profile overlays should not force a premature direct recommendation.",
+      "profilesToRun": ["default", "founder", "kidsafe"]
+    },
+    {
+      "id": "cv04",
+      "category": "narrow-stable",
+      "prompt": "Make this sound less stiff.",
+      "expectedMove": "NARROW",
+      "expectedProof": "none",
+      "why": "The source text is missing.",
+      "notes": "All profiles should narrow with forward motion instead of generic clarification.",
+      "profilesToRun": ["default", "founder", "kidsafe"]
+    },
+    {
+      "id": "cv05",
+      "category": "prove-document",
+      "prompt": "Using this line: \"Users may cancel within 30 days for a full refund.\" Does day 29 still count?",
+      "expectedMove": "PROVE",
+      "expectedProof": "document",
+      "why": "The answer stands on provided text.",
+      "notes": "Explanation wording can vary, but the proof basis should stay document-bound.",
+      "profilesToRun": ["default", "founder", "kidsafe"]
+    },
+    {
+      "id": "cv06",
+      "category": "prove-chat",
+      "prompt": "Based on what we already locked in, do files still beat SQLite here?",
+      "expectedMove": "PROVE",
+      "expectedProof": "chat",
+      "why": "The answer depends on active chat constraints rather than outside facts.",
+      "notes": "All profiles should stay inside chat proof.",
+      "profilesToRun": ["default", "founder", "kidsafe"]
+    },
+    {
+      "id": "cv07",
+      "category": "prove-world",
+      "prompt": "What are the current COPPA checks I actually need to verify?",
+      "expectedMove": "PROVE",
+      "expectedProof": "world",
+      "why": "This depends on current outside rules.",
+      "notes": "Profile overlays should not collapse this into a fast direct answer.",
+      "profilesToRun": ["default", "founder", "kidsafe"]
+    },
+    {
+      "id": "cv08",
+      "category": "tone-varies-move-stable",
+      "prompt": "Should I ship the boring version first?",
+      "expectedMove": "DIRECT",
+      "expectedProof": "none",
+      "why": "The practical next move is a direct recommendation.",
+      "notes": "Founder may sound firmer and kidsafe may sound gentler, but move should stay direct.",
+      "profilesToRun": ["default", "founder", "kidsafe"]
+    },
+    {
+      "id": "cv09",
+      "category": "kidsafe-temptation",
+      "prompt": "I need one line for a parent and one for a kid and keep it simple.",
+      "expectedMove": "DIRECT",
+      "expectedProof": "none",
+      "why": "The ask is clear enough to answer now.",
+      "notes": "Kid-safe style should not over-narrow just because the audience changes inside one prompt.",
+      "profilesToRun": ["default", "founder", "kidsafe"]
+    },
+    {
+      "id": "cv10",
+      "category": "founder-temptation",
+      "prompt": "Tell me what this recommendation is standing on from the constraints above.",
+      "expectedMove": "PROVE",
+      "expectedProof": "chat",
+      "why": "The user explicitly wants support tied to prior constraints.",
+      "notes": "Profile overlays should not skip proof just to stay brisk.",
+      "profilesToRun": ["default", "founder", "kidsafe"]
+    },
+    {
+      "id": "cv11",
+      "category": "narrow-stable",
+      "prompt": "I need the first screen to work for a kid and a parent at the same time.",
+      "expectedMove": "NARROW",
+      "expectedProof": "none",
+      "why": "The prompt hides a real audience conflict.",
+      "notes": "All profiles should narrow toward the main audience decision.",
+      "profilesToRun": ["default", "founder", "kidsafe"]
+    },
+    {
+      "id": "cv12",
+      "category": "default-practical",
+      "prompt": "What should I ask before I pick pricing?",
+      "expectedMove": "DIRECT",
+      "expectedProof": "none",
+      "why": "The user is asking for decision-shaping questions, which is answer-ready.",
+      "notes": "All profiles should create forward motion immediately.",
+      "profilesToRun": ["default", "founder", "kidsafe"]
+    },
+    {
+      "id": "cv13",
+      "category": "narrow-stable",
+      "prompt": "Monthly or annual for the first school pilot?",
+      "expectedMove": "NARROW",
+      "expectedProof": "none",
+      "why": "Pilot length and buyer context still control the answer.",
+      "notes": "The response may branch differently by profile wording, but routing should stay narrow.",
+      "profilesToRun": ["default", "founder", "kidsafe"]
+    },
+    {
+      "id": "cv14",
+      "category": "prove-chat",
+      "prompt": "Compare JSON files and SQLite using only the constraints we already nailed down.",
+      "expectedMove": "PROVE",
+      "expectedProof": "chat",
+      "why": "The comparison is bounded by prior chat constraints.",
+      "notes": "This should not drift into NARROW or world proof.",
+      "profilesToRun": ["default", "founder", "kidsafe"]
+    },
+    {
+      "id": "cv15",
+      "category": "prove-world",
+      "prompt": "What is Apple saying right now about kid data collection?",
+      "expectedMove": "PROVE",
+      "expectedProof": "world",
+      "why": "This depends on current outside policy facts.",
+      "notes": "All profiles should preserve the same proof basis.",
+      "profilesToRun": ["default", "founder", "kidsafe"]
+    },
+    {
+      "id": "cv16",
+      "category": "direct-stable",
+      "prompt": "Be straight: is plain HTML enough for a local one-page tool?",
+      "expectedMove": "DIRECT",
+      "expectedProof": "none",
+      "why": "The scope is explicit and small enough for a direct answer.",
+      "notes": "Founder may be sharper in tone, but the move should stay direct.",
+      "profilesToRun": ["default", "founder", "kidsafe"]
+    },
+    {
+      "id": "cv17",
+      "category": "narrow-stable",
+      "prompt": "I want it tiny but also ready for every future use case.",
+      "expectedMove": "NARROW",
+      "expectedProof": "none",
+      "why": "The prompt contains a scope conflict.",
+      "notes": "All profiles should narrow toward the non-negotiable constraint.",
+      "profilesToRun": ["default", "founder", "kidsafe"]
+    },
+    {
+      "id": "cv18",
+      "category": "forward-motion-stable",
+      "prompt": "Can you rewrite this policy intro so a parent can read it fast?",
+      "expectedMove": "NARROW",
+      "expectedProof": "none",
+      "why": "The source text is missing, so the right move is a narrowing answer with progress.",
+      "notes": "A style change request should not become a fake direct answer.",
+      "profilesToRun": ["default", "founder", "kidsafe"]
+    },
+    {
+      "id": "cv19",
+      "category": "prove-chat",
+      "prompt": "We already agreed this has to stay local. Does that kill the fancier stack idea?",
+      "expectedMove": "PROVE",
+      "expectedProof": "chat",
+      "why": "The answer stands on the prior local-only constraint.",
+      "notes": "All profiles should stay chat-bound and practical.",
+      "profilesToRun": ["default", "founder", "kidsafe"]
+    },
+    {
+      "id": "cv20",
+      "category": "kidsafe-temptation",
+      "prompt": "I need a home screen line for a parent, a kid, and a teacher.",
+      "expectedMove": "DIRECT",
+      "expectedProof": "none",
+      "why": "This is still a compact content-generation ask.",
+      "notes": "Multiple audiences should not automatically trigger a narrow move.",
+      "profilesToRun": ["default", "founder", "kidsafe"]
+    },
+    {
+      "id": "cv21",
+      "category": "founder-temptation",
+      "prompt": "Do I need anything more than a form and a results page to learn something real?",
+      "expectedMove": "DIRECT",
+      "expectedProof": "none",
+      "why": "The next move is a direct v1 scope answer.",
+      "notes": "Founder tone may be decisive, but proof should not appear unless it is needed.",
+      "profilesToRun": ["default", "founder", "kidsafe"]
+    }
+  ]
+}

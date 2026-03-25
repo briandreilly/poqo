@@ -1,0 +1,774 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>poqo local harness</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #efe9de;
+        --panel: #fffdf8;
+        --panel-2: #f7f0e4;
+        --ink: #1d1c1a;
+        --muted: #655d53;
+        --accent: #116466;
+        --accent-2: #7c5c32;
+        --border: #d8cfbf;
+        --good: #166534;
+        --bad: #991b1b;
+        --shadow: 0 10px 24px rgba(29, 28, 26, 0.05);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        height: 100%;
+      }
+
+      body {
+        margin: 0;
+        font-family: Georgia, "Times New Roman", serif;
+        background: radial-gradient(circle at top, #fffdf8, var(--bg) 62%);
+        color: var(--ink);
+        overflow: hidden;
+      }
+
+      main {
+        max-width: 1380px;
+        height: 100vh;
+        margin: 0 auto;
+        padding: 18px;
+        display: grid;
+        grid-template-rows: auto auto 1fr;
+        gap: 12px;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+
+      .lede,
+      .status-line,
+      .hint,
+      .log-meta {
+        color: var(--muted);
+      }
+
+      .status-line {
+        min-height: 22px;
+      }
+
+      .app-shell {
+        min-height: 0;
+        display: grid;
+        grid-template-columns: minmax(0, 1.08fr) minmax(360px, 0.92fr);
+        gap: 16px;
+      }
+
+      .left-column,
+      .right-column {
+        min-height: 0;
+      }
+
+      .left-column {
+        display: grid;
+        grid-template-rows: auto 1fr;
+        gap: 16px;
+      }
+
+      .right-column {
+        display: grid;
+      }
+
+      .panel {
+        min-height: 0;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 16px;
+        box-shadow: var(--shadow);
+      }
+
+      .panel.stack {
+        display: grid;
+        gap: 12px;
+      }
+
+      .panel.scroll-panel {
+        display: grid;
+        grid-template-rows: auto 1fr;
+        gap: 12px;
+      }
+
+      .scroll-body {
+        min-height: 0;
+        overflow: auto;
+        display: grid;
+        gap: 12px;
+        padding-right: 4px;
+      }
+
+      .log-panel {
+        display: grid;
+        grid-template-rows: auto auto 1fr;
+        gap: 12px;
+      }
+
+      .toolbar,
+      .two-up,
+      .three-up,
+      .log-toolbar {
+        display: grid;
+        gap: 12px;
+      }
+
+      .two-up,
+      .log-toolbar {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .three-up {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      label {
+        display: block;
+        font-size: 14px;
+        margin-bottom: 8px;
+        color: var(--muted);
+      }
+
+      select,
+      textarea,
+      button {
+        width: 100%;
+        font: inherit;
+      }
+
+      select,
+      textarea {
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 10px 12px;
+        background: #fff;
+        color: var(--ink);
+      }
+
+      #prompt {
+        min-height: 76px;
+        height: 76px;
+        resize: none;
+        overflow: auto;
+      }
+
+      #batchPrompt {
+        min-height: 132px;
+        height: 132px;
+        resize: none;
+        overflow: auto;
+      }
+
+      .last-ai-card pre,
+      .batch-status-card pre {
+        max-height: 72px;
+        overflow: auto;
+      }
+
+      button {
+        border: 0;
+        border-radius: 999px;
+        padding: 0 16px;
+        height: 48px;
+        min-height: 48px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--accent);
+        color: #fff;
+        cursor: pointer;
+        margin-top: 0;
+        white-space: nowrap;
+      }
+
+      button.secondary {
+        background: var(--accent-2);
+      }
+
+      button.ghost {
+        background: #ece2cf;
+        color: #5a4323;
+      }
+
+      button:disabled {
+        opacity: 0.7;
+        cursor: wait;
+      }
+
+      .meta {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .card {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 10px 12px;
+        background: #fff;
+      }
+
+      .card strong {
+        display: block;
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+
+      pre {
+        white-space: pre-wrap;
+        margin: 0;
+        font-family: "SFMono-Regular", Consolas, monospace;
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+
+      .state-ok {
+        color: var(--good);
+      }
+
+      .state-bad {
+        color: var(--bad);
+      }
+
+      .log-box {
+        min-height: 0;
+        width: 100%;
+        height: 100%;
+        resize: none;
+        font-family: "SFMono-Regular", Consolas, monospace;
+        font-size: 13px;
+        line-height: 1.45;
+        background: #1f1c18;
+        color: #f4efe5;
+        border: 1px solid #403629;
+        border-radius: 12px;
+        padding: 14px;
+      }
+
+      .log-meta {
+        font-size: 13px;
+      }
+
+      @media (max-width: 980px) {
+        body {
+          overflow: auto;
+        }
+
+        main {
+          height: auto;
+          min-height: 100vh;
+          grid-template-rows: auto auto auto;
+        }
+
+        .app-shell,
+        .two-up,
+        .three-up,
+        .meta,
+        .log-toolbar {
+          grid-template-columns: 1fr;
+        }
+
+        .left-column {
+          grid-template-rows: auto auto;
+        }
+
+        .panel,
+        .scroll-body,
+        .log-box {
+          min-height: auto;
+        }
+
+        .log-box {
+          height: 320px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div>
+        <h1>poqo local model harness</h1>
+      </div>
+      <p class="lede">
+        Local-only test harness for poqo. poqo is the routing layer. The configured model service is the answering layer after poqo routes.
+      </p>
+      <p class="status-line" id="statusLine">Checking local harness status...</p>
+
+      <div class="app-shell">
+        <div class="left-column">
+          <section class="panel stack">
+            <div class="two-up">
+              <div>
+                <label for="profile">Profile</label>
+                <select id="profile"></select>
+              </div>
+              <div>
+                <label for="interventionMode">Intervention Mode</label>
+                <select id="interventionMode">
+                  <option value="calm" selected>calm</option>
+                  <option value="counter">counter</option>
+                  <option value="blunt">blunt</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label for="prompt">Prompt</label>
+              <textarea id="prompt" placeholder="Enter a real prompt to test"></textarea>
+            </div>
+
+            <div>
+              <label for="batchPrompt">Batch Prompts</label>
+              <textarea id="batchPrompt" placeholder="Paste prompts here. Separate each prompt with a blank line."></textarea>
+            </div>
+
+            <div class="hint" id="modelLine">Configured model: -</div>
+
+            <div class="toolbar three-up">
+              <button id="runHarness">Run Harness</button>
+              <button id="runBatch">Run Batch</button>
+              <button id="evaluate" class="secondary">Run Evaluator</button>
+            </div>
+
+            <div class="card batch-status-card">
+              <strong>Batch Status</strong>
+              <pre id="batchStatusOutput">Batch idle.</pre>
+            </div>
+
+            <div class="card last-ai-card">
+              <strong>Last Model Response</strong>
+              <pre id="lastModelResponseOutput">Awaiting latest run.</pre>
+            </div>
+          </section>
+
+          <section class="panel scroll-panel">
+            <h2>Current Structured Result</h2>
+            <div class="scroll-body">
+              <div class="meta">
+                <div class="card">
+                  <strong>Intervention</strong>
+                  <span id="modeOutput">-</span>
+                </div>
+                <div class="card">
+                  <strong>Move</strong>
+                  <span id="moveOutput">-</span>
+                </div>
+                <div class="card">
+                  <strong>Proof</strong>
+                  <span id="proofOutput">-</span>
+                </div>
+                <div class="card">
+                  <strong>Model</strong>
+                  <span id="modelOutput">-</span>
+                </div>
+              </div>
+
+              <div class="card">
+                <strong>Routing Explanation</strong>
+                <pre id="routeOutput">-</pre>
+              </div>
+
+              <div class="card">
+                <strong>poqo Brief</strong>
+                <pre id="poqoBriefOutput">-</pre>
+              </div>
+
+              <div class="card">
+                <strong>Final Model Answer</strong>
+                <pre id="modelResponseOutput">Final model answer appears after a harness run.</pre>
+              </div>
+
+              <div class="card">
+                <strong>Combined View</strong>
+                <pre id="combinedOutput">Run the harness to inspect the routing layer and the answering layer side by side.</pre>
+              </div>
+
+              <div class="card">
+                <strong>Execution Trace</strong>
+                <pre id="traceOutput">-</pre>
+              </div>
+
+              <div class="card">
+                <strong>Raw JSON</strong>
+                <pre id="jsonOutput">-</pre>
+              </div>
+
+              <div class="card">
+                <strong>Evaluator</strong>
+                <pre id="evaluatorOutput">Run the evaluator to verify the frozen benchmark spine.</pre>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <aside class="panel log-panel right-column">
+          <div>
+            <h2>Cumulative Copy Log</h2>
+            <p class="log-meta">Each successful run appends here with the original prompt text exactly as typed.</p>
+          </div>
+
+          <div class="log-toolbar">
+            <button id="copyLog" class="ghost">Copy All</button>
+            <button id="clearLog" class="ghost">Clear Log</button>
+          </div>
+
+          <textarea id="logOutput" class="log-box" readonly spellcheck="false" placeholder="Run the harness to accumulate copy-friendly entries."></textarea>
+        </aside>
+      </div>
+    </main>
+
+    <script>
+      const profileSelect = document.getElementById("profile");
+      const promptInput = document.getElementById("prompt");
+      const interventionModeSelect = document.getElementById("interventionMode");
+      const batchPromptInput = document.getElementById("batchPrompt");
+      const statusLine = document.getElementById("statusLine");
+      const modelLine = document.getElementById("modelLine");
+      const moveOutput = document.getElementById("moveOutput");
+      const proofOutput = document.getElementById("proofOutput");
+      const modeOutput = document.getElementById("modeOutput");
+      const modelOutput = document.getElementById("modelOutput");
+      const routeOutput = document.getElementById("routeOutput");
+      const poqoBriefOutput = document.getElementById("poqoBriefOutput");
+      const modelResponseOutput = document.getElementById("modelResponseOutput");
+      const combinedOutput = document.getElementById("combinedOutput");
+      const traceOutput = document.getElementById("traceOutput");
+      const jsonOutput = document.getElementById("jsonOutput");
+      const evaluatorOutput = document.getElementById("evaluatorOutput");
+      const lastModelResponseOutput = document.getElementById("lastModelResponseOutput");
+      const batchStatusOutput = document.getElementById("batchStatusOutput");
+      const logOutput = document.getElementById("logOutput");
+      const runHarnessButton = document.getElementById("runHarness");
+      const runBatchButton = document.getElementById("runBatch");
+      const evaluateButton = document.getElementById("evaluate");
+      const copyLogButton = document.getElementById("copyLog");
+      const clearLogButton = document.getElementById("clearLog");
+
+      let harnessStatus = { modelAvailable: false, modelProvider: "openai", modelName: "gpt-5.4" };
+      let cumulativeLog = "";
+
+      function renderHarnessStatus() {
+        const availability = harnessStatus.modelAvailable
+          ? '<span class="state-ok">Model API key detected</span>'
+          : '<span class="state-bad">Model API key missing</span>';
+        statusLine.innerHTML = `${availability}. The interface always runs poqo first, then the configured model service, and keeps the execution trace visible.`;
+        modelLine.textContent = `Configured model: ${harnessStatus.modelProvider} / ${harnessStatus.modelName}`;
+      }
+
+      function buildTraceText(payload) {
+        return [
+          `poqoCompletedBeforeModel: ${payload.poqoCompletedBeforeModel}`,
+          `poqoStartedAt: ${payload.poqoStartedAt}`,
+          `poqoFinishedAt: ${payload.poqoFinishedAt}`,
+          `modelStartedAt: ${payload.modelStartedAt || "null"}`,
+          `modelFinishedAt: ${payload.modelFinishedAt || "null"}`
+        ].join("\n");
+      }
+
+      function renderHarnessResponse(payload) {
+        modeOutput.textContent = payload.interventionMode;
+        moveOutput.textContent = payload.move;
+        proofOutput.textContent = payload.proofType;
+        modelOutput.textContent = `${payload.modelProvider} / ${payload.modelName}`;
+        routeOutput.textContent = payload.routingExplanation;
+        poqoBriefOutput.textContent = payload.poqoBrief;
+        const latestModelResponse = payload.modelError
+          ? `Model error: ${payload.modelError}`
+          : payload.modelResponse || "Awaiting model answer.";
+
+        modelResponseOutput.textContent = payload.modelError
+          ? `Model error: ${payload.modelError}`
+          : payload.modelResponse || "Awaiting model answer.";
+        lastModelResponseOutput.textContent = latestModelResponse;
+
+        combinedOutput.textContent = [
+          `[Routing Layer / poqo]`,
+          payload.poqoBrief,
+          "",
+          `[Answering Layer / Model Service]`,
+          payload.modelError ? `Error: ${payload.modelError}` : payload.modelResponse || "Not requested in this mode."
+        ].join("\n");
+
+        traceOutput.textContent = buildTraceText(payload);
+
+        jsonOutput.textContent = JSON.stringify(payload, null, 2);
+      }
+
+      function buildLogEntry(payload, originalPrompt) {
+        return [
+          "Prompt:",
+          originalPrompt,
+          "",
+          "Profile:",
+          payload.profile,
+          "",
+          "Configured model:",
+          `${payload.modelProvider} / ${payload.modelName}`,
+          "",
+          "Mode:",
+          payload.mode,
+          "",
+          "Intervention mode:",
+          payload.interventionMode,
+          "",
+          "Move:",
+          payload.move,
+          "",
+          "Proof:",
+          payload.proofType,
+          "",
+          "Routing explanation:",
+          payload.routingExplanation,
+          "",
+          "poqo brief:",
+          payload.poqoBrief,
+          "",
+          "Final model answer:",
+          payload.modelError ? `Model error: ${payload.modelError}` : payload.modelResponse || "Not requested in this mode.",
+          "",
+          "Execution trace:",
+          buildTraceText(payload),
+          "",
+          "----------------------------------------"
+        ].join("\n");
+      }
+
+      function buildErrorLogEntry(originalPrompt, errorMessage) {
+        return [
+          "Prompt:",
+          originalPrompt,
+          "",
+          "Profile:",
+          profileSelect.value,
+          "",
+          "Configured model:",
+          `${harnessStatus.modelProvider} / ${harnessStatus.modelName}`,
+          "",
+          "Mode:",
+          "poqo-plus-model",
+          "",
+          "Intervention mode:",
+          interventionModeSelect.value,
+          "",
+          "Move:",
+          "error",
+          "",
+          "Proof:",
+          "error",
+          "",
+          "Routing explanation:",
+          `Harness error: ${errorMessage}`,
+          "",
+          "poqo brief:",
+          "Harness request failed before a result was returned.",
+          "",
+          "Final model answer:",
+          "Not available.",
+          "",
+          "Execution trace:",
+          "poqoCompletedBeforeModel: unknown\npoqoStartedAt: null\npoqoFinishedAt: null\nmodelStartedAt: null\nmodelFinishedAt: null",
+          "",
+          "----------------------------------------"
+        ].join("\n");
+      }
+
+      function prependLogEntry(entry) {
+        cumulativeLog = cumulativeLog ? `${entry}\n\n${cumulativeLog}` : entry;
+        logOutput.value = cumulativeLog;
+        logOutput.scrollTop = 0;
+      }
+
+      function appendLogEntry(payload, originalPrompt) {
+        prependLogEntry(buildLogEntry(payload, originalPrompt));
+      }
+
+      function appendErrorLogEntry(originalPrompt, errorMessage) {
+        prependLogEntry(buildErrorLogEntry(originalPrompt, errorMessage));
+      }
+
+      function setBatchStatus(message) {
+        batchStatusOutput.textContent = message;
+      }
+
+      function parseBatchPrompts(rawText) {
+        return rawText
+          .replace(/\r\n/g, "\n")
+          .split(/\n\s*\n+/)
+          .map((chunk) => chunk.replace(/^\n+|\n+$/g, ""))
+          .filter((chunk) => chunk.trim().length > 0);
+      }
+      async function copyAllLog() {
+        if (!logOutput.value) {
+          return;
+        }
+
+        try {
+          await navigator.clipboard.writeText(logOutput.value);
+          copyLogButton.textContent = "Copied";
+          window.setTimeout(() => {
+            copyLogButton.textContent = "Copy All";
+          }, 1200);
+        } catch (error) {
+          logOutput.focus();
+          logOutput.select();
+          document.execCommand("copy");
+          copyLogButton.textContent = "Copied";
+          window.setTimeout(() => {
+            copyLogButton.textContent = "Copy All";
+          }, 1200);
+        }
+      }
+
+      function clearLog() {
+        cumulativeLog = "";
+        logOutput.value = "";
+      }
+
+      async function loadProfiles() {
+        const response = await fetch("/api/profiles");
+        const data = await response.json();
+        profileSelect.innerHTML = "";
+
+        for (const profile of data.profiles) {
+          const option = document.createElement("option");
+          option.value = profile.id;
+          option.textContent = `${profile.title} (${profile.id})`;
+          profileSelect.appendChild(option);
+        }
+      }
+
+      async function loadStatus() {
+        const response = await fetch("/api/harness/status");
+        harnessStatus = await response.json();
+        renderHarnessStatus();
+      }
+
+      async function requestHarness(promptText, domainContextAnchor = null) {
+        const response = await fetch("/api/harness/run", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            profileId: profileSelect.value,
+            prompt: promptText,
+            mode: "poqo-plus-model",
+            interventionMode: interventionModeSelect.value,
+            domainContextAnchor
+          })
+        });
+
+        const payload = await response.json();
+        if (!response.ok) {
+          throw new Error(payload.error || "Harness request failed.");
+        }
+
+        return payload;
+      }
+
+      function setHarnessButtonsDisabled(disabled) {
+        runHarnessButton.disabled = disabled;
+        runBatchButton.disabled = disabled;
+        evaluateButton.disabled = disabled;
+      }
+
+      async function runHarness() {
+        const originalPrompt = promptInput.value;
+        setHarnessButtonsDisabled(true);
+        runHarnessButton.textContent = "Running...";
+
+        try {
+          const payload = await requestHarness(originalPrompt);
+          renderHarnessResponse(payload);
+          appendLogEntry(payload, originalPrompt);
+          setBatchStatus("Batch idle.");
+        } catch (error) {
+          alert(error.message || "Harness request failed.");
+        } finally {
+          setHarnessButtonsDisabled(false);
+          runHarnessButton.textContent = "Run Harness";
+        }
+      }
+
+      async function runBatch() {
+        const prompts = parseBatchPrompts(batchPromptInput.value);
+        if (!prompts.length) {
+          setBatchStatus("Batch idle. Paste prompts separated by blank lines.");
+          return;
+        }
+
+        setHarnessButtonsDisabled(true);
+        runBatchButton.textContent = "Running...";
+        setBatchStatus(`Processed 0 of ${prompts.length} prompts`);
+
+        try {
+          let batchDomainAnchor = null;
+
+          for (let index = 0; index < prompts.length; index += 1) {
+            const promptText = prompts[index];
+            try {
+              const payload = await requestHarness(promptText, batchDomainAnchor);
+              renderHarnessResponse(payload);
+              appendLogEntry(payload, promptText);
+              if (payload.effectiveDomainAnchor) {
+                batchDomainAnchor = payload.effectiveDomainAnchor;
+              }
+            } catch (error) {
+              appendErrorLogEntry(promptText, error.message || "Harness request failed.");
+            } finally {
+              setBatchStatus(`Processed ${index + 1} of ${prompts.length} prompts`);
+            }
+          }
+
+          setBatchStatus(`Batch complete: ${prompts.length} prompts`);
+        } finally {
+          setHarnessButtonsDisabled(false);
+          runBatchButton.textContent = "Run Batch";
+        }
+      }
+
+      async function runEvaluator() {
+        evaluateButton.disabled = true;
+        evaluateButton.textContent = "Running...";
+        evaluatorOutput.textContent = "Running evaluator...";
+
+        try {
+          const response = await fetch("/api/evaluate");
+          const payload = await response.json();
+          evaluatorOutput.textContent = JSON.stringify(payload.summary, null, 2);
+        } finally {
+          evaluateButton.disabled = false;
+          evaluateButton.textContent = "Run Evaluator";
+        }
+      }
+
+      runHarnessButton.addEventListener("click", runHarness);
+      runBatchButton.addEventListener("click", runBatch);
+      evaluateButton.addEventListener("click", runEvaluator);
+      copyLogButton.addEventListener("click", copyAllLog);
+      clearLogButton.addEventListener("click", clearLog);
+
+      Promise.all([loadProfiles(), loadStatus()]).catch((error) => {
+        statusLine.textContent = error.message || "Failed to load local harness.";
+      });
+    </script>
+  </body>
+</html>

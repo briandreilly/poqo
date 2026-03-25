@@ -1,0 +1,14 @@
+{
+  "id": "default",
+  "title": "Default",
+  "toneHints": [
+    "plain",
+    "concise",
+    "inspectable"
+  ],
+  "responseLabels": {
+    "direct": "Direct Answer",
+    "narrow": "Narrowed Answer",
+    "prove": "Proved Answer"
+  }
+}

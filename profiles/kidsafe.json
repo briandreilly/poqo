@@ -1,0 +1,24 @@
+{
+  "id": "kidsafe",
+  "title": "Kid-Safe",
+  "toneHints": [
+    "gentle",
+    "plain",
+    "age-clear"
+  ],
+  "responseLabels": {
+    "direct": "Next Step",
+    "narrow": "First We Shrink It",
+    "prove": "What This Uses"
+  },
+  "termSubstitutions": [
+    {
+      "from": "constraints",
+      "to": "rules"
+    },
+    {
+      "from": "variable",
+      "to": "missing piece"
+    }
+  ]
+}
