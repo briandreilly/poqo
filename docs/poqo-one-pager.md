@@ -4,10 +4,10 @@ poqo is a judgment engine.
 
 It uses:
 
-- one real Constitution: [constitution/core.json](/Users/admin/Documents/poqo/constitution/core.json)
-- optional presentation profiles: [profiles/](/Users/admin/Documents/poqo/profiles)
-- one Operating Spec: [operating-spec.md](/Users/admin/Documents/poqo/docs/operating-spec.md)
-- one Prompt/Test layer: [prompts/](/Users/admin/Documents/poqo/prompts)
+- one real Constitution: [constitution/core.json](../constitution/core.json)
+- optional presentation profiles: [profiles/](../profiles/)
+- one Operating Spec: [operating-spec.md](operating-spec.md)
+- one Prompt/Test layer: [prompts/](../prompts/)
 
 ## Core Primitive
 

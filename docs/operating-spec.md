@@ -1,10 +1,10 @@
 # Operating Spec
 
-Canonical constitution: [constitution/core.json](/Users/admin/Documents/poqo/constitution/core.json)
+Canonical constitution: [constitution/core.json](../constitution/core.json)
 
-Profiles are presentation-only overlays in [profiles/](/Users/admin/Documents/poqo/profiles).
+Profiles are presentation-only overlays in [profiles/](../profiles/).
 
-Canonical profile boundary: [allowed-profile-surface.md](/Users/admin/Documents/poqo/docs/allowed-profile-surface.md)
+Canonical profile boundary: [allowed-profile-surface.md](allowed-profile-surface.md)
 
 This document owns routing, proof, intervention modes, domain lock, and the practical routing map.
 

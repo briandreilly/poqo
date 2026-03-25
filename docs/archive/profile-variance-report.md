@@ -89,4 +89,4 @@ Yes. In the current frozen benchmark set, poqo behaves like a portable primitive
 
 The profiles now change expression without changing core routing judgment on the tested prompts.
 
-That remains valid only while profiles stay inside the allowed presentation surface described in [allowed-profile-surface.md](/Users/admin/Documents/poqo/docs/allowed-profile-surface.md).
+That remains valid only while profiles stay inside the allowed presentation surface described in [allowed-profile-surface.md](../allowed-profile-surface.md).

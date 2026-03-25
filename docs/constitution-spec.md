@@ -1,12 +1,12 @@
 # Constitution Spec
 
-Canonical constitutional authority: [constitution/core.json](/Users/admin/Documents/poqo/constitution/core.json)
+Canonical constitutional authority: [constitution/core.json](../constitution/core.json)
 
 poqo now has one real Constitution.
 
-Profiles are not constitutions. They live under [profiles/](/Users/admin/Documents/poqo/profiles) and are limited to post-routing presentation, labels, tone hints, and tightly bounded word substitutions.
+Profiles are not constitutions. They live under [profiles/](../profiles/) and are limited to post-routing presentation, labels, tone hints, and tightly bounded word substitutions.
 
-Canonical profile boundary: [allowed-profile-surface.md](/Users/admin/Documents/poqo/docs/allowed-profile-surface.md)
+Canonical profile boundary: [allowed-profile-surface.md](allowed-profile-surface.md)
 
 A line belongs in the Constitution only if removing it would change one of these:
 

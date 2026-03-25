@@ -469,8 +469,8 @@
 
       function renderHarnessStatus() {
         const availability = harnessStatus.modelAvailable
-          ? '<span class="state-ok">Model API key detected</span>'
-          : '<span class="state-bad">Model API key missing</span>';
+          ? '<span class="state-ok">Model API key ready</span>'
+          : '<span class="state-bad">Model API key missing or placeholder</span>';
         statusLine.innerHTML = `${availability}. The interface always runs poqo first, then the configured model service, and keeps the execution trace visible.`;
         modelLine.textContent = `Configured model: ${harnessStatus.modelProvider} / ${harnessStatus.modelName}`;
       }

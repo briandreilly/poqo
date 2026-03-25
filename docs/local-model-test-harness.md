@@ -35,10 +35,15 @@ Do not commit secrets.
 
 ## How To Run
 
-1. `cd /Users/admin/Documents/poqo`
-2. edit `.env` and add your `MODEL_API_KEY`
-3. `npm run demo`
-4. open `http://localhost:3030`
+1. `cd <your-clone>`
+2. `npm install`
+3. copy `.env.example` to `.env`
+4. edit `.env` and add your `MODEL_API_KEY`
+5. run `npm run typecheck`, `npm run arch:check`, and `npm run eval:all`
+6. `npm run demo`
+7. open `http://localhost:3030`
+
+If port `3030` is already in use, run `PORT=3031 npm run demo`.
 
 ## How The Harness Works
 
@@ -90,6 +95,10 @@ If `MODEL_API_KEY` is missing:
 
 - the main interface still shows poqo routing and a helpful local error instead of crashing
 - the internal `poqo-only` path still works
+
+If `MODEL_API_KEY` is still the example placeholder:
+
+- the harness reports the model as unavailable until you replace it with a real key
 
 ## Current Provider Notes
 
