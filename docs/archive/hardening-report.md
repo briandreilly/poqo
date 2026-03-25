@@ -2,7 +2,7 @@
 
 ## What Was Added
 
-- a formal v1 acceptance document at `docs/v1-acceptance.md`
+- a formal v1 acceptance document at `docs/archive/v1-acceptance.md`
 - a 24-prompt adversarial stress set at `prompts/prompt-set-stress.json`
 - evaluator support for `v1`, `stress`, and `all` modes
 

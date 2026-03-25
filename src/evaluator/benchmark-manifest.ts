@@ -9,7 +9,7 @@ export const benchmarkManifest: Record<BenchmarkId, BenchmarkMetadata> = {
     filePath: "prompts/prompt-set-v1.json",
     frozen: true,
     description: "Baseline routing benchmark for the core DIRECT, NARROW, and PROVE loop.",
-    reportPath: "docs/hardening-report.md",
+    reportPath: "docs/archive/hardening-report.md",
     profiles: ["default"]
   },
   stress: {
@@ -18,7 +18,7 @@ export const benchmarkManifest: Record<BenchmarkId, BenchmarkMetadata> = {
     filePath: "prompts/prompt-set-stress.json",
     frozen: true,
     description: "Adversarial routing cases that pressure ambiguity handling, proof restraint, and partial narrowing.",
-    reportPath: "docs/hardening-report.md",
+    reportPath: "docs/archive/hardening-report.md",
     profiles: ["default"]
   },
   blind: {
@@ -27,7 +27,7 @@ export const benchmarkManifest: Record<BenchmarkId, BenchmarkMetadata> = {
     filePath: "prompts/prompt-set-blind.json",
     frozen: true,
     description: "Messier real-world phrasing that tests forward motion outside evaluator-shaped prompts.",
-    reportPath: "docs/blind-judgment-report.md",
+    reportPath: "docs/archive/blind-judgment-report.md",
     profiles: ["default"]
   },
   redteam: {
@@ -36,7 +36,7 @@ export const benchmarkManifest: Record<BenchmarkId, BenchmarkMetadata> = {
     filePath: "prompts/prompt-set-redteam.json",
     frozen: true,
     description: "Harsher mixed-intent prompts that test overreach, over-proof, and benchmark discipline.",
-    reportPath: "docs/redteam-benchmark-report.md",
+    reportPath: "docs/archive/redteam-benchmark-report.md",
     profiles: ["default"]
   },
   variance: {
@@ -45,7 +45,7 @@ export const benchmarkManifest: Record<BenchmarkId, BenchmarkMetadata> = {
     filePath: "prompts/prompt-set-profile-variance.json",
     frozen: true,
     description: "Cross-profile stability checks that separate presentation variation from routing drift.",
-    reportPath: "docs/profile-variance-report.md",
+    reportPath: "docs/archive/profile-variance-report.md",
     profiles: ["default", "founder", "kidsafe"]
   }
 };
