@@ -2,6 +2,8 @@
 
 poqo is a judgment engine with one real Constitution and a separate operating layer.
 
+👉 See a full example: [Homework Judgment Demo](docs/demo-homework-judgment.md)
+
 Its job is not to be a general chatbot or a giant agent system. Its job is to make the right next move for an input:
 
 - `DIRECT` = respond now
