@@ -92,6 +92,21 @@ function buildResponseConfigTaskLines(input: ModelExecutionInput): string[] {
   return lines;
 }
 
+function buildLiveBriefConstraint(input: ModelExecutionInput): string | null {
+  if (input.responseSurface !== "live-brief") {
+    return null;
+  }
+
+  return [
+    "This is the live /try surface.",
+    "Output only three short parts labeled Judgment, Reason, and either Sharper version or Clarifying question.",
+    "Keep the whole answer to about 3 to 6 short lines total.",
+    "Do not output long breakdowns, essay-style implications, multiple rewrite options, or extended lists.",
+    "Prefer one best rewrite over several alternatives.",
+    "If the claim is too vague to sharpen responsibly, ask one clarifying question instead."
+  ].join(" ");
+}
+
 function buildInstructionText(input: ModelExecutionInput): string {
   // Intervention mode and frame-preserving behavior are already decided before
   // the model seam is called. This function may only restate those decisions.
@@ -165,6 +180,7 @@ function buildInstructionText(input: ModelExecutionInput): string {
     interventionConstraint,
     buildResponseConfigConstraint(input),
     buildDomainConstraint(input.domainAnchor),
+    buildLiveBriefConstraint(input),
     directConstraint,
     "If the route is PROVE with world proof and freshness matters, be explicit about any uncertainty or verification needs."
   ].filter(Boolean).join(" ");
@@ -204,6 +220,16 @@ function buildTaskText(input: ModelExecutionInput): string {
           ].join("\n")
     : null;
 
+  const liveBriefPattern = input.responseSurface === "live-brief"
+    ? [
+        "Live /try output shape:",
+        "- Use exactly these labels: Judgment, Reason, and either Sharper version or Clarifying question.",
+        "- Keep each part to one short sentence.",
+        "- Keep the total output to about 3 to 6 short lines.",
+        "- Do not add extra sections, long lists, or multiple rewrite options."
+      ].join("\n")
+    : null;
+
   return [
     "Original user prompt:",
     input.prompt,
@@ -218,11 +244,13 @@ function buildTaskText(input: ModelExecutionInput): string {
     "",
     `framePreservingDirect: ${input.framePreservingDirect ? "yes" : "no"}`,
     `interventionMode: ${input.interventionMode}`,
+    `responseSurface: ${input.responseSurface ?? "default"}`,
     ...buildResponseConfigTaskLines(input),
     `domainAnchor: ${input.domainAnchor ?? "none"}`,
     input.domainAnchor
       ? `Domain lock instructions: stay inside ${input.domainAnchor} and do not switch to adjacent domains or real-world analogies unless the user asks.`
       : null,
+    liveBriefPattern,
     directPattern,
     "",
     "Write the actual final natural-language answer for the user.",

@@ -107,6 +107,8 @@ export interface ResponseConfigInput {
   prefer?: string[];
 }
 
+export type ResponseSurface = "default" | "live-brief";
+
 export interface ModelExecutionInput {
   prompt: string;
   runtimeGuide: RuntimeGuide;
@@ -118,6 +120,7 @@ export interface ModelExecutionInput {
   interventionMode: InterventionMode;
   responseConfig: ResponseConfig;
   domainAnchor: DomainAnchor;
+  responseSurface?: ResponseSurface;
 }
 
 export interface ModelExecutionPrompt {
