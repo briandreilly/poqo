@@ -186,6 +186,20 @@ function hasExactSentenceCount(text: string, length: ResponseLength): boolean {
   return sentences.length === getTargetSentenceCount(length);
 }
 
+function violatesStatementOutputContract(text: string): boolean {
+  const normalized = text.trim().toLowerCase();
+
+  if (!normalized) {
+    return true;
+  }
+
+  if (normalized.includes("?")) {
+    return true;
+  }
+
+  return /^(?:can you|could you|would you|what evidence|what exactly|what definition|what are you basing|define your terms|i need a clearer version|i need a precise version|state the boundary clearly)\b/u.test(normalized);
+}
+
 function buildClarifyingQuestion(claim: string, result: PoqoResult, responseConfig: ResponseConfig): string {
   const lower = cleanClaim(claim).toLowerCase();
 
@@ -757,7 +771,11 @@ export async function buildTryResponse(
     );
 
     const cleanedResponse = sanitizeTryResponseText(modelResult.responseText, length);
-    const finalResponse = hasExactSentenceCount(cleanedResponse, length) ? cleanedResponse : fallbackResponse;
+    const inputShape = classifyTryInputShape(claim);
+    const modelViolatesStatementRule = inputShape === "statement" && violatesStatementOutputContract(cleanedResponse);
+    const finalResponse = hasExactSentenceCount(cleanedResponse, length) && !modelViolatesStatementRule
+      ? cleanedResponse
+      : fallbackResponse;
 
     return {
       ...basePayload,

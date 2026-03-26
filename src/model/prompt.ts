@@ -102,14 +102,29 @@ function buildResponseConfigTaskLines(input: ModelExecutionInput): string[] {
 
 function buildTryLengthInstruction(length: ModelExecutionInput["responseLength"]): string {
   if (length === "medium") {
-    return "Respond in 2 to 3 sentences.";
+    return "Respond in exactly 2 sentences. No third sentence.";
   }
 
   if (length === "long") {
-    return "Respond in 4 to 6 sentences.";
+    return "Respond in exactly 4 sentences. No fifth sentence.";
   }
 
-  return "Respond in exactly one sentence.";
+  return "Respond in exactly 1 sentence. No second sentence and no fragments.";
+}
+
+function classifyTryInputShape(prompt: string): "question" | "statement" {
+  const trimmed = prompt.trim();
+  if (!trimmed) {
+    return "statement";
+  }
+
+  if (trimmed.endsWith("?")) {
+    return "question";
+  }
+
+  return /^(?:is|are|am|do|does|did|can|could|should|would|will|what|why|how|when|where|who|whom|whose|which)\b/i.test(trimmed)
+    ? "question"
+    : "statement";
 }
 
 function buildTryAttitudeInstruction(input: ModelExecutionInput): string {
@@ -127,20 +142,22 @@ function buildTryAttitudeInstruction(input: ModelExecutionInput): string {
 }
 
 function buildTryAnswerObjective(input: ModelExecutionInput): string {
+  const inputShape = classifyTryInputShape(input.prompt);
+
+  if (inputShape === "question") {
+    if (input.move === "PROVE") {
+      return "Answer the question directly while making clear that the claim still needs evidence before it can be treated as settled.";
+    }
+
+    return "Answer the question directly. If the boundary is still loose, keep the answer provisional instead of asking a clarifying question.";
+  }
+
   if (input.move === "NARROW") {
-    if (input.responseConfig.attitude === "challenge") {
-      return "Ask one firm clarifying question that presses the missing definition or basis.";
-    }
-
-    if (input.responseConfig.attitude === "difficult") {
-      return "Ask one low-tolerance clarifying question that forces specificity.";
-    }
-
-    return "Ask one clean clarifying question that would make the claim answerable.";
+    return "Return the best tightened declarative statement you can. Preserve the user's core intent, remove overreach, and add a boundary if needed. If the statement is underspecified, say so declaratively instead of asking the user a question.";
   }
 
   if (input.move === "PROVE") {
-    return "Give a clean answer that says the claim needs evidence before it can be treated as settled.";
+    return "Return a declarative answer that makes clear the claim still needs evidence before it can be treated as settled.";
   }
 
   if (input.framePreservingDirect && input.interventionMode === "calm") {
@@ -148,14 +165,14 @@ function buildTryAnswerObjective(input: ModelExecutionInput): string {
   }
 
   if (input.interventionMode === "counter") {
-    return "Answer directly, but intelligent pressure is allowed where poqo's chosen move permits it.";
+    return "Return the best tightened declarative answer you can, with intelligent pressure where poqo's chosen move permits it.";
   }
 
   if (input.interventionMode === "blunt") {
-    return "Answer directly and reject weak framing faster where poqo's chosen move permits it.";
+    return "Return the best declarative answer you can and reject weak framing faster where poqo's chosen move permits it.";
   }
 
-  return "Give the best final answer to the claim while following poqo's chosen move.";
+  return "Give the best final declarative answer to the claim while following poqo's chosen move.";
 }
 
 function buildTryAnswerPrompt(input: ModelExecutionInput): ModelExecutionPrompt {
@@ -179,6 +196,17 @@ function buildTryAnswerPrompt(input: ModelExecutionInput): ModelExecutionPrompt 
       "- Do NOT use the phrases \"Broken down\", \"Implications\", or \"A stronger version\"",
       "- Do NOT use numbered lists or labels",
       buildTryLengthInstruction(input.responseLength),
+      "- Do not exceed the sentence limit under any circumstance.",
+      "- If the input is a statement, return a statement by default.",
+      "- For declarative inputs, you MUST respond with a declarative statement.",
+      "- Do NOT ask the user a question for a declarative input.",
+      "- Do NOT request clarification for a declarative input.",
+      "- Do NOT output any sentence ending in a question mark for a declarative input.",
+      "- Bad for declarative inputs: \"Can you specify what you mean...\"",
+      "- Bad for declarative inputs: \"What evidence supports that...\"",
+      "- Good for declarative inputs: \"That claim is too broad to stand on its own because...\"",
+      "- Good for declarative inputs: \"A clearer version would tie the claim to...\"",
+      "- If the input is a question, answer it directly.",
       buildLanguageConstraint(config.language),
       buildTryToneInstruction(config.tone),
       buildTryAttitudeInstruction(input),
@@ -188,6 +216,7 @@ function buildTryAnswerPrompt(input: ModelExecutionInput): ModelExecutionPrompt 
     taskText: [
       `Silent routing move: ${input.move}`,
       `Silent proof basis: ${input.proofType}`,
+      `Silent input shape: ${classifyTryInputShape(input.prompt)}`,
       `Silent routing explanation: ${input.routingExplanation}`,
       `Silent response objective: ${buildTryAnswerObjective(input)}`,
       ...buildResponseConfigTaskLines(input),
