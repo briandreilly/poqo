@@ -14,6 +14,12 @@ export type ModelProvider = "openai";
 
 export type InterventionMode = "calm" | "counter" | "blunt";
 
+export type ResponseAttitude = "normal" | "challenge" | "difficult";
+
+export type ResponseTone = "neutral" | "warm" | "direct" | "sharp";
+
+export type ResponseLanguage = "en" | "es";
+
 export type DomainAnchor = "minecraft" | "product-ui" | "healthcare" | null;
 
 export type ToneHint = "plain" | "concise" | "inspectable" | "practical" | "low-drama" | "gentle" | "age-clear";
@@ -81,6 +87,26 @@ export interface ModelConfig {
   name: string;
 }
 
+export interface ResponseConfig {
+  attitude: ResponseAttitude;
+  tone: ResponseTone;
+  language: ResponseLanguage;
+  customToneNotes: string;
+  customBehaviorNotes: string;
+  forbid: string[];
+  prefer: string[];
+}
+
+export interface ResponseConfigInput {
+  attitude?: ResponseAttitude;
+  tone?: ResponseTone;
+  language?: ResponseLanguage;
+  customToneNotes?: string;
+  customBehaviorNotes?: string;
+  forbid?: string[];
+  prefer?: string[];
+}
+
 export interface ModelExecutionInput {
   prompt: string;
   runtimeGuide: RuntimeGuide;
@@ -90,6 +116,7 @@ export interface ModelExecutionInput {
   poqoBrief: string;
   framePreservingDirect: boolean;
   interventionMode: InterventionMode;
+  responseConfig: ResponseConfig;
   domainAnchor: DomainAnchor;
 }
 
@@ -265,7 +292,8 @@ export interface HarnessRequest {
   profileId: ProfileId;
   prompt: string;
   mode: HarnessMode;
-  interventionMode: InterventionMode;
+  interventionMode?: InterventionMode;
+  responseConfig?: ResponseConfigInput;
   domainContextAnchor?: DomainAnchor;
 }
 
@@ -274,6 +302,7 @@ export interface HarnessResponse {
   prompt: string;
   mode: HarnessMode;
   interventionMode: InterventionMode;
+  responseConfig: ResponseConfig;
   effectiveDomainAnchor?: DomainAnchor;
   move: Move;
   proofType: ProofType;

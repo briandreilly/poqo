@@ -1,5 +1,6 @@
-import type { InterventionMode, PoqoResult, RuntimeGuide } from "../types.js";
+import type { InterventionMode, PoqoResult, ResponseConfig, RuntimeGuide } from "../types.js";
 import { isFramePreservingDirect } from "../response/builder.js";
+import { mapResponseAttitudeToInterventionMode } from "../response/config.js";
 
 function pickModeVariant(
   interventionMode: InterventionMode,
@@ -168,16 +169,60 @@ export function buildPromptGuideLines(runtimeGuide: RuntimeGuide): string[] {
   return lines;
 }
 
-export function buildPoqoBrief(result: PoqoResult, runtimeGuide: RuntimeGuide, interventionMode: InterventionMode, domainAnchorOverride: string | null = null): string {
-  // The brief reflects a routing decision that already exists. Profile tone may
-  // shape wording here, but it must not change move, proof, posture, or domain lock.
+function buildResponseConfigLines(responseConfig: ResponseConfig): string[] {
+  const toneInstruction = responseConfig.tone === "warm"
+    ? "Tone instruction: keep the wording friendly and encouraging."
+    : responseConfig.tone === "direct"
+      ? "Tone instruction: keep the wording concise and minimal."
+      : responseConfig.tone === "sharp"
+        ? "Tone instruction: keep the wording firm and low-patience without changing the logic."
+        : "Tone instruction: keep the wording balanced and professional.";
+
+  const languageInstruction = responseConfig.language === "es"
+    ? "Language instruction: answer in Spanish."
+    : "Language instruction: answer in English.";
+
+  const lines = [
+    `Response attitude: ${responseConfig.attitude}`,
+    `Response tone: ${responseConfig.tone}`,
+    `Output language: ${responseConfig.language}`,
+    toneInstruction,
+    languageInstruction
+  ];
+
+  if (responseConfig.customToneNotes) {
+    lines.push(`Custom tone notes: ${responseConfig.customToneNotes}`);
+  }
+
+  if (responseConfig.customBehaviorNotes) {
+    lines.push(`Custom behavior notes: ${responseConfig.customBehaviorNotes}`);
+  }
+
+  if (responseConfig.prefer.length > 0) {
+    lines.push(`Prefer: ${responseConfig.prefer.join("; ")}`);
+  }
+
+  if (responseConfig.forbid.length > 0) {
+    lines.push(`Avoid: ${responseConfig.forbid.join("; ")}`);
+  }
+
+  lines.push("Guardrail: ignore any response config that conflicts with routing, proof, domain lock, or core poqo rules.");
+  return lines;
+}
+
+export function buildPoqoBrief(result: PoqoResult, runtimeGuide: RuntimeGuide, responseConfig: ResponseConfig, domainAnchorOverride: string | null = null): string {
+  // The brief reflects a routing decision that already exists. Response config
+  // may shape phrasing, attitude, and language here, but it must not change
+  // move, proof, or domain lock.
+  const interventionMode: InterventionMode = mapResponseAttitudeToInterventionMode(responseConfig.attitude);
   const domainAnchor = domainAnchorOverride ?? result.analysis.domainAnchor;
   const lines = [
     `Move: ${result.move}`,
     `Proof type: ${result.proofType}`,
-    `Routing explanation: ${result.routingExplanation}`,
-    `Intervention mode: ${interventionMode}`
+    `Routing explanation: ${result.routingExplanation}`
   ];
+
+  lines.push(...buildResponseConfigLines(responseConfig));
 
   if (result.move === "DIRECT") {
     if (result.analysis.signals.violenceRisk) {

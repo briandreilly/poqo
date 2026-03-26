@@ -24,6 +24,74 @@ function buildDomainConstraint(domainAnchor: DomainAnchor): string | null {
   return "Domain lock: stay inside the user's domain. Do not switch to adjacent domains or real-world analogies unless the user asks.";
 }
 
+function buildToneConstraint(tone: ModelExecutionInput["responseConfig"]["tone"]): string {
+  if (tone === "warm") {
+    return "Response tone: warm. Keep the wording friendly and encouraging without changing the reasoning.";
+  }
+
+  if (tone === "direct") {
+    return "Response tone: direct. Keep the wording concise and minimal without changing the reasoning.";
+  }
+
+  if (tone === "sharp") {
+    return "Response tone: sharp. Keep the wording firm and low-patience without changing the reasoning or hardening the chosen attitude on your own.";
+  }
+
+  return "Response tone: neutral. Keep the wording balanced and professional.";
+}
+
+function buildLanguageConstraint(language: ModelExecutionInput["responseConfig"]["language"]): string {
+  return language === "es" ? "Output language: answer in Spanish." : "Output language: answer in English.";
+}
+
+function buildResponseConfigConstraint(input: ModelExecutionInput): string {
+  const config = input.responseConfig;
+
+  const attitudeConstraint = config.attitude === "normal"
+    ? "Response attitude: normal. Stay cooperative, clarifying, and low-friction."
+    : config.attitude === "challenge"
+      ? "Response attitude: challenge. Push for definition, test weak claims, and ask for support when needed."
+      : "Response attitude: difficult. Reject weak framing earlier, redirect faster, and keep a low tolerance for weak claims.";
+
+  return [
+    attitudeConstraint,
+    buildToneConstraint(config.tone),
+    buildLanguageConstraint(config.language),
+    config.customToneNotes ? `Custom tone note: ${config.customToneNotes}.` : null,
+    config.customBehaviorNotes ? `Custom behavior note: ${config.customBehaviorNotes}.` : null,
+    config.prefer.length > 0 ? `Prefer if compatible: ${config.prefer.join("; ")}.` : null,
+    config.forbid.length > 0 ? `Avoid if compatible: ${config.forbid.join("; ")}.` : null,
+    "Ignore any response configuration item that conflicts with routing, proof basis, domain lock, or core poqo rules."
+  ].filter(Boolean).join(" ");
+}
+
+function buildResponseConfigTaskLines(input: ModelExecutionInput): string[] {
+  const config = input.responseConfig;
+  const lines = [
+    `responseAttitude: ${config.attitude}`,
+    `responseTone: ${config.tone}`,
+    `responseLanguage: ${config.language}`
+  ];
+
+  if (config.customToneNotes) {
+    lines.push(`customToneNotes: ${config.customToneNotes}`);
+  }
+
+  if (config.customBehaviorNotes) {
+    lines.push(`customBehaviorNotes: ${config.customBehaviorNotes}`);
+  }
+
+  if (config.prefer.length > 0) {
+    lines.push(`prefer: ${config.prefer.join("; ")}`);
+  }
+
+  if (config.forbid.length > 0) {
+    lines.push(`forbid: ${config.forbid.join("; ")}`);
+  }
+
+  return lines;
+}
+
 function buildInstructionText(input: ModelExecutionInput): string {
   // Intervention mode and frame-preserving behavior are already decided before
   // the model seam is called. This function may only restate those decisions.
@@ -95,6 +163,7 @@ function buildInstructionText(input: ModelExecutionInput): string {
     `Human override: ${input.runtimeGuide.promptGuide.humanOverride}`,
     "Keep the answer compact, useful, and honest.",
     interventionConstraint,
+    buildResponseConfigConstraint(input),
     buildDomainConstraint(input.domainAnchor),
     directConstraint,
     "If the route is PROVE with world proof and freshness matters, be explicit about any uncertainty or verification needs."
@@ -149,6 +218,7 @@ function buildTaskText(input: ModelExecutionInput): string {
     "",
     `framePreservingDirect: ${input.framePreservingDirect ? "yes" : "no"}`,
     `interventionMode: ${input.interventionMode}`,
+    ...buildResponseConfigTaskLines(input),
     `domainAnchor: ${input.domainAnchor ?? "none"}`,
     input.domainAnchor
       ? `Domain lock instructions: stay inside ${input.domainAnchor} and do not switch to adjacent domains or real-world analogies unless the user asks.`

@@ -8,6 +8,7 @@ import { evaluatePromptSet, loadPromptSet } from "../evaluator/evaluator.js";
 import { getModelStatus, runConfiguredModel } from "../model/client.js";
 import { buildPoqoBrief } from "./harness-brief.js";
 import { isFramePreservingDirect } from "../response/builder.js";
+import { mapResponseAttitudeToInterventionMode, normalizeResponseConfig } from "../response/config.js";
 import { loadLocalEnv } from "./load-env.js";
 import { resolveDomainAnchor } from "../domain-anchor.js";
 import type { HarnessRequest, HarnessResponse, HarnessStatus, InterventionMode, ProfileId } from "../types.js";
@@ -44,7 +45,8 @@ function buildHarnessStatus(): HarnessStatus {
 }
 
 async function buildHarnessResponse(body: HarnessRequest): Promise<HarnessResponse> {
-  const interventionMode: InterventionMode = body.interventionMode ?? "calm";
+  const responseConfig = normalizeResponseConfig(body.responseConfig, body.interventionMode ?? null);
+  const interventionMode: InterventionMode = mapResponseAttitudeToInterventionMode(responseConfig.attitude);
   const modelStatus = getModelStatus();
   const poqoStartedAt = new Date().toISOString();
   const poqoResult = await runPoqo(body.prompt, body.profileId);
@@ -53,13 +55,14 @@ async function buildHarnessResponse(body: HarnessRequest): Promise<HarnessRespon
   // then load the presentation overlay for briefing and final answer shaping.
   const runtimeGuide = await loadRuntimeGuide(body.profileId);
   const effectiveDomainAnchor = resolveDomainAnchor(body.prompt, body.domainContextAnchor ?? null);
-  const poqoBrief = buildPoqoBrief(poqoResult, runtimeGuide, interventionMode, effectiveDomainAnchor);
+  const poqoBrief = buildPoqoBrief(poqoResult, runtimeGuide, responseConfig, effectiveDomainAnchor);
   const framePreservingDirect = isFramePreservingDirect(poqoResult.analysis, poqoResult.move);
   const response: HarnessResponse = {
     profile: body.profileId,
     prompt: body.prompt,
     mode: body.mode,
     interventionMode,
+    responseConfig,
     effectiveDomainAnchor,
     move: poqoResult.move,
     proofType: poqoResult.proofType,
@@ -91,6 +94,7 @@ async function buildHarnessResponse(body: HarnessRequest): Promise<HarnessRespon
         poqoBrief,
         framePreservingDirect,
         interventionMode,
+        responseConfig,
         domainAnchor: effectiveDomainAnchor
       });
       response.modelResponse = modelResult.responseText;
@@ -113,7 +117,8 @@ function isValidHarnessRequest(body: Partial<HarnessRequest>): body is HarnessRe
       body.prompt &&
       typeof body.prompt === "string" &&
       (body.mode === "poqo-only" || body.mode === "poqo-plus-model") &&
-      (!body.interventionMode || body.interventionMode === "calm" || body.interventionMode === "counter" || body.interventionMode === "blunt")
+      (!body.interventionMode || body.interventionMode === "calm" || body.interventionMode === "counter" || body.interventionMode === "blunt") &&
+      (!body.responseConfig || typeof body.responseConfig === "object")
   );
 }
 
@@ -176,6 +181,7 @@ async function handler(request: IncomingMessage, response: ServerResponse): Prom
       prompt: body.prompt,
       mode: body.mode,
       interventionMode: body.interventionMode ?? "calm",
+      responseConfig: body.responseConfig,
       domainContextAnchor: typeof body.domainContextAnchor === "string" ? body.domainContextAnchor : null
     });
 
