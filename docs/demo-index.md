@@ -10,6 +10,9 @@ These examples show how poqo evaluates responses.
 - [Health Claim](demo-health-claim.md)
 - [Business Decision](demo-business-decision.md)
 - [Factual Claim](demo-factual-claim.md)
+- [Attitude Example — Social Media](demo-attitude-social-media.md)
+- [Attitude Example — Startup Pricing](demo-attitude-business-pricing.md)
+- [Attitude Example — Health Claim](demo-attitude-health-claim.md)
 
 ---
 
