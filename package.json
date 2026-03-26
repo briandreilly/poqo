@@ -6,6 +6,7 @@
   "scripts": {
     "arch:check": "npm run build && node dist/src/architecture/check.js",
     "demo": "npm run build && node dist/src/demo/server.js",
+    "demo:cli": "npm run build && node dist/src/demo/cli.js",
     "eval": "npm run build && node dist/src/evaluator/run.js v1",
     "eval:v1": "npm run build && node dist/src/evaluator/run.js v1",
     "eval:stress": "npm run build && node dist/src/evaluator/run.js stress",

@@ -10,9 +10,11 @@ poqo is a judgment engine with one real Constitution and a separate operating la
 2. Run `npm install`.
 3. Copy `.env.example` to `.env` and add `MODEL_API_KEY` if you want to use the model-backed demo.
 4. Run `npm run typecheck`, `npm run arch:check`, and `npm run eval:all`.
-5. Run `npm run demo` and open `http://localhost:3030`.
+5. Run `npm run demo` and open `http://localhost:3030/try.html` for the tiny browser demo.
 
 If port `3030` is already in use, run `PORT=3031 npm run demo` instead.
+
+The full local harness still lives at `http://localhost:3030/`.
 
 Its job is not to be a general chatbot or a giant agent system. Its job is to make the right next move for an input:
 

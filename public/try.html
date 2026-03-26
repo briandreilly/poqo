@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>poqo try</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 24px;
+        font-family: Georgia, "Times New Roman", serif;
+        background: #f6f1e8;
+        color: #1d1c1a;
+      }
+
+      main {
+        max-width: 760px;
+        margin: 0 auto;
+        display: grid;
+        gap: 16px;
+      }
+
+      h1,
+      p {
+        margin: 0;
+      }
+
+      .panel {
+        background: #fffdf8;
+        border: 1px solid #d8cfbf;
+        border-radius: 14px;
+        padding: 16px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 8px;
+        color: #655d53;
+      }
+
+      textarea,
+      select,
+      button {
+        width: 100%;
+        font: inherit;
+      }
+
+      textarea,
+      select {
+        border: 1px solid #d8cfbf;
+        border-radius: 10px;
+        padding: 10px 12px;
+        background: #fff;
+        color: #1d1c1a;
+      }
+
+      textarea {
+        min-height: 120px;
+        resize: vertical;
+      }
+
+      .row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      button {
+        border: 0;
+        border-radius: 999px;
+        padding: 12px 16px;
+        background: #116466;
+        color: #fff;
+        cursor: pointer;
+      }
+
+      pre {
+        margin: 0;
+        white-space: pre-wrap;
+        font-family: "SFMono-Regular", Consolas, monospace;
+        line-height: 1.45;
+      }
+
+      @media (max-width: 700px) {
+        .row {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div>
+        <h1>Try poqo</h1>
+        <p>Enter a claim, choose attitude and tone, and see poqo respond through the existing live path.</p>
+      </div>
+
+      <section class="panel">
+        <label for="claim">Claim</label>
+        <textarea id="claim" placeholder="Social media is toxic."></textarea>
+      </section>
+
+      <section class="panel row">
+        <div>
+          <label for="attitude">Attitude</label>
+          <select id="attitude">
+            <option value="normal" selected>normal</option>
+            <option value="challenge">challenge</option>
+            <option value="difficult">difficult</option>
+          </select>
+        </div>
+        <div>
+          <label for="tone">Tone</label>
+          <select id="tone">
+            <option value="neutral" selected>neutral</option>
+            <option value="warm">warm</option>
+            <option value="direct">direct</option>
+            <option value="sharp">sharp</option>
+          </select>
+        </div>
+      </section>
+
+      <section class="panel">
+        <button id="submit">Try poqo</button>
+      </section>
+
+      <section class="panel">
+        <pre id="output">Submit a claim to see the response.</pre>
+      </section>
+    </main>
+
+    <script>
+      const claimInput = document.getElementById("claim");
+      const attitudeSelect = document.getElementById("attitude");
+      const toneSelect = document.getElementById("tone");
+      const submitButton = document.getElementById("submit");
+      const output = document.getElementById("output");
+
+      async function runTry() {
+        const claim = claimInput.value.trim();
+        if (!claim) {
+          output.textContent = "Enter a claim first.";
+          return;
+        }
+
+        submitButton.disabled = true;
+        submitButton.textContent = "Running...";
+        output.textContent = "Running poqo...";
+
+        try {
+          const response = await fetch("/api/try", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              claim,
+              attitude: attitudeSelect.value,
+              tone: toneSelect.value,
+              language: "en"
+            })
+          });
+
+          const payload = await response.json();
+          if (!response.ok) {
+            throw new Error(payload.error || "Request failed.");
+          }
+
+          output.textContent = [
+            `Claim: ${payload.claim}`,
+            `Attitude: ${payload.attitude}`,
+            `Tone: ${payload.tone}`,
+            `Language: ${payload.language}`,
+            `Mode: ${payload.mode}`,
+            "",
+            payload.response
+          ].join("\n");
+        } catch (error) {
+          output.textContent = error.message || "Request failed.";
+        } finally {
+          submitButton.disabled = false;
+          submitButton.textContent = "Try poqo";
+        }
+      }
+
+      submitButton.addEventListener("click", runTry);
+    </script>
+  </body>
+</html>

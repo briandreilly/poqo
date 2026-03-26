@@ -11,12 +11,29 @@ import { isFramePreservingDirect } from "../response/builder.js";
 import { mapResponseAttitudeToInterventionMode, normalizeResponseConfig } from "../response/config.js";
 import { loadLocalEnv } from "./load-env.js";
 import { resolveDomainAnchor } from "../domain-anchor.js";
-import type { HarnessRequest, HarnessResponse, HarnessStatus, InterventionMode, ProfileId } from "../types.js";
+import type {
+  HarnessRequest,
+  HarnessResponse,
+  HarnessStatus,
+  InterventionMode,
+  ProfileId,
+  ResponseAttitude,
+  ResponseLanguage,
+  ResponseTone
+} from "../types.js";
 
 loadLocalEnv();
 
 const publicDir = path.join(process.cwd(), "public");
 const port = Number(process.env.PORT ?? 3030);
+const DEFAULT_PROFILE_ID: ProfileId = "default";
+
+interface TryRequestBody {
+  claim?: string;
+  attitude?: ResponseAttitude;
+  tone?: ResponseTone;
+  language?: ResponseLanguage;
+}
 
 async function readJsonBody(request: IncomingMessage): Promise<unknown> {
   const chunks: Buffer[] = [];
@@ -34,10 +51,18 @@ function sendJson(response: ServerResponse, payload: unknown, statusCode = 200):
   response.end(JSON.stringify(payload, null, 2));
 }
 
-async function serveIndex(response: ServerResponse): Promise<void> {
-  const html = await readFile(path.join(publicDir, "index.html"), "utf8");
+async function serveHtml(response: ServerResponse, fileName: string): Promise<void> {
+  const html = await readFile(path.join(publicDir, fileName), "utf8");
   response.writeHead(200, { "content-type": "text/html; charset=utf-8" });
   response.end(html);
+}
+
+async function serveIndex(response: ServerResponse): Promise<void> {
+  await serveHtml(response, "index.html");
+}
+
+async function serveTryPage(response: ServerResponse): Promise<void> {
+  await serveHtml(response, "try.html");
 }
 
 function buildHarnessStatus(): HarnessStatus {
@@ -111,6 +136,83 @@ async function buildHarnessResponse(body: HarnessRequest): Promise<HarnessRespon
   return response;
 }
 
+async function buildTryResponse(body: TryRequestBody) {
+  const responseConfig = normalizeResponseConfig({
+    attitude: body.attitude,
+    tone: body.tone,
+    language: body.language
+  });
+  const interventionMode: InterventionMode = mapResponseAttitudeToInterventionMode(responseConfig.attitude);
+  const modelStatus = getModelStatus();
+  const claim = body.claim!.trim();
+  const poqoResult = await runPoqo(claim, DEFAULT_PROFILE_ID);
+  const runtimeGuide = await loadRuntimeGuide(DEFAULT_PROFILE_ID);
+  const effectiveDomainAnchor = resolveDomainAnchor(claim, null);
+  const poqoBrief = buildPoqoBrief(poqoResult, runtimeGuide, responseConfig, effectiveDomainAnchor);
+  const framePreservingDirect = isFramePreservingDirect(poqoResult.analysis, poqoResult.move);
+
+  const basePayload = {
+    ok: true,
+    claim,
+    attitude: responseConfig.attitude,
+    tone: responseConfig.tone,
+    language: responseConfig.language,
+    modelProvider: modelStatus.modelProvider,
+    modelName: modelStatus.modelName,
+    modelAvailable: modelStatus.modelAvailable
+  };
+
+  if (!modelStatus.modelAvailable) {
+    return {
+      ...basePayload,
+      mode: "fallback-no-model",
+      response: `Model output is unavailable locally because MODEL_API_KEY is missing.\n\npoqo brief:\n${poqoBrief}`
+    };
+  }
+
+  try {
+    const modelResult = await runConfiguredModel({
+      prompt: claim,
+      runtimeGuide,
+      move: poqoResult.move,
+      proofType: poqoResult.proofType,
+      routingExplanation: poqoResult.routingExplanation,
+      poqoBrief,
+      framePreservingDirect,
+      interventionMode,
+      responseConfig,
+      domainAnchor: effectiveDomainAnchor
+    });
+
+    return {
+      ...basePayload,
+      mode: "poqo-plus-model",
+      response: modelResult.responseText,
+      modelProvider: modelResult.provider,
+      modelName: modelResult.modelName
+    };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Model request failed.";
+    return {
+      ...basePayload,
+      mode: "fallback-model-error",
+      response: `Model output is unavailable right now.\n\npoqo brief:\n${poqoBrief}`,
+      modelError: message
+    };
+  }
+}
+
+function isValidTryRequest(body: Partial<TryRequestBody>): body is TryRequestBody {
+  return Boolean(
+    body.claim &&
+    typeof body.claim === "string" &&
+    body.claim.trim().length > 0 &&
+    (!body.attitude || body.attitude === "normal" || body.attitude === "challenge" || body.attitude === "difficult") &&
+    (!body.tone || body.tone === "neutral" || body.tone === "warm" || body.tone === "direct" || body.tone === "sharp") &&
+    (!body.language || body.language === "en" || body.language === "es")
+  );
+}
+
 function isValidHarnessRequest(body: Partial<HarnessRequest>): body is HarnessRequest {
   return Boolean(
       body.profileId &&
@@ -127,6 +229,11 @@ async function handler(request: IncomingMessage, response: ServerResponse): Prom
 
   if (request.method === "GET" && url.pathname === "/") {
     await serveIndex(response);
+    return;
+  }
+
+  if (request.method === "GET" && url.pathname === "/try.html") {
+    await serveTryPage(response);
     return;
   }
 
@@ -165,6 +272,19 @@ async function handler(request: IncomingMessage, response: ServerResponse): Prom
 
     const result = await runPoqo(body.prompt, body.profileId as ProfileId);
     sendJson(response, result);
+    return;
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/try") {
+    const body = (await readJsonBody(request)) as Partial<TryRequestBody>;
+
+    if (!isValidTryRequest(body)) {
+      sendJson(response, { error: "claim is required" }, 400);
+      return;
+    }
+
+    const tryResponse = await buildTryResponse(body);
+    sendJson(response, tryResponse);
     return;
   }
 
