@@ -170,13 +170,11 @@ export function buildPromptGuideLines(runtimeGuide: RuntimeGuide): string[] {
 }
 
 function buildResponseConfigLines(responseConfig: ResponseConfig): string[] {
-  const toneInstruction = responseConfig.tone === "warm"
-    ? "Tone instruction: keep the wording friendly and encouraging."
-    : responseConfig.tone === "direct"
-      ? "Tone instruction: keep the wording concise and minimal."
-      : responseConfig.tone === "sharp"
-        ? "Tone instruction: keep the wording firm and low-patience without changing the logic."
-        : "Tone instruction: keep the wording balanced and professional.";
+  const toneInstruction = responseConfig.tone === "direct"
+    ? "Tone instruction: keep the wording concise and minimal."
+    : responseConfig.tone === "sharp"
+      ? "Tone instruction: keep the wording firm and low-patience without changing the logic."
+      : "Tone instruction: keep the wording balanced and professional.";
 
   const languageInstruction = responseConfig.language === "es"
     ? "Language instruction: answer in Spanish."

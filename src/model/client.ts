@@ -1,7 +1,7 @@
-import { getModelConfig } from "./config.js";
+import { getModelConfig, getModelConfigFromSource } from "./config.js";
 import { buildModelExecutionPrompt } from "./prompt.js";
 import { runOpenAIModel } from "./providers/openai.js";
-import type { HarnessStatus, ModelExecutionInput, ModelExecutionResult } from "../types.js";
+import type { HarnessStatus, ModelConfig, ModelExecutionInput, ModelExecutionResult } from "../types.js";
 
 // The model client is an execution seam only. It selects the configured
 // provider adapter, but it must not inspect the prompt content to revise move,
@@ -17,9 +17,7 @@ function hasUsableApiKey(apiKey: string | null): boolean {
   return normalized !== "your_model_api_key_here" && normalized !== "your_openai_api_key_here";
 }
 
-export function getModelStatus(): HarnessStatus {
-  const config = getModelConfig();
-
+export function getModelStatus(config: ModelConfig = getModelConfig()): HarnessStatus {
   return {
     modelAvailable: hasUsableApiKey(config.apiKey),
     modelProvider: config.provider,
@@ -27,9 +25,14 @@ export function getModelStatus(): HarnessStatus {
   };
 }
 
-export async function runConfiguredModel(input: ModelExecutionInput): Promise<ModelExecutionResult> {
-  const config = getModelConfig();
+export function getModelStatusFromSource(source: Record<string, string | undefined | null>): HarnessStatus {
+  return getModelStatus(getModelConfigFromSource(source));
+}
 
+export async function runConfiguredModel(
+  input: ModelExecutionInput,
+  config: ModelConfig = getModelConfig()
+): Promise<ModelExecutionResult> {
   if (!hasUsableApiKey(config.apiKey)) {
     throw new Error("MODEL_API_KEY is not set. Replace the example placeholder in .env to use the model harness.");
   }

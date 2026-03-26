@@ -1,15 +1,20 @@
-import { readdir, readFile } from "node:fs/promises";
-import path from "node:path";
+import coreData from "../../constitution/core.json" with { type: "json" };
+import defaultProfileData from "../../profiles/default.json" with { type: "json" };
+import founderProfileData from "../../profiles/founder.json" with { type: "json" };
+import kidsafeProfileData from "../../profiles/kidsafe.json" with { type: "json" };
 
 import type { ConstitutionCore, Profile, PromptGuide, RuntimeGuide, TermSubstitution, ToneHint } from "../types.js";
 
 // poqo has one real Constitution source. Profile overlays are loaded separately
 // and validated against a presentation-only surface.
-const corePath = path.join(process.cwd(), "constitution", "core.json");
-const profilesDir = path.join(process.cwd(), "profiles");
 const allowedProfileIds = new Set<Profile["id"]>(["default", "founder", "kidsafe"]);
 const allowedToneHints = new Set<ToneHint>(["plain", "concise", "inspectable", "practical", "low-drama", "gentle", "age-clear"]);
 const controlPattern = /\b(direct|narrow|prove|proof|route|routing|calm|counter|blunt|domain|frame|constitution|profile|override)\b/i;
+const rawProfiles = {
+  default: defaultProfileData,
+  founder: founderProfileData,
+  kidsafe: kidsafeProfileData
+} as const;
 
 function assertProfileId(value: unknown, field: string): Profile["id"] {
   const id = assertString(value, field) as Profile["id"];
@@ -175,13 +180,17 @@ function buildPromptGuide(core: ConstitutionCore, profile: Profile): PromptGuide
 }
 
 export async function loadCoreConstitution(): Promise<ConstitutionCore> {
-  const raw = await readFile(corePath, "utf8");
-  return validateCore(JSON.parse(raw));
+  return validateCore(coreData);
 }
 
 export async function loadProfile(id: string): Promise<Profile> {
-  const raw = await readFile(path.join(profilesDir, `${id}.json`), "utf8");
-  return validateProfile(JSON.parse(raw));
+  const rawProfile = rawProfiles[id as keyof typeof rawProfiles];
+
+  if (!rawProfile) {
+    throw new Error(`Unsupported profile id: ${id}`);
+  }
+
+  return validateProfile(rawProfile);
 }
 
 export async function loadRuntimeGuide(id: string): Promise<RuntimeGuide> {
@@ -196,11 +205,9 @@ export async function loadRuntimeGuide(id: string): Promise<RuntimeGuide> {
 }
 
 export async function listProfiles(): Promise<Array<Pick<Profile, "id" | "title">>> {
-  const files = (await readdir(profilesDir)).filter((file) => file.endsWith(".json")).sort();
   const profiles = await Promise.all(
-    files.map(async (file) => {
-      const raw = await readFile(path.join(profilesDir, file), "utf8");
-      const profile = validateProfile(JSON.parse(raw));
+    Object.values(rawProfiles).map(async (rawProfile) => {
+      const profile = validateProfile(rawProfile);
       return {
         id: profile.id,
         title: profile.title
@@ -208,5 +215,5 @@ export async function listProfiles(): Promise<Array<Pick<Profile, "id" | "title"
     })
   );
 
-  return profiles;
+  return profiles.sort((a, b) => a.id.localeCompare(b.id));
 }

@@ -70,8 +70,16 @@ function isResponseAttitude(value: unknown): value is ResponseAttitude {
   return value === "normal" || value === "challenge" || value === "difficult";
 }
 
-function isResponseTone(value: unknown): value is ResponseTone {
-  return value === "neutral" || value === "warm" || value === "direct" || value === "sharp";
+function normalizeResponseTone(value: unknown): ResponseTone {
+  if (value === "direct" || value === "sharp") {
+    return value;
+  }
+
+  if (value === "warm") {
+    return "neutral";
+  }
+
+  return "neutral";
 }
 
 function isResponseLanguage(value: unknown): value is ResponseLanguage {
@@ -98,7 +106,7 @@ export function normalizeResponseConfig(
 
   return {
     attitude,
-    tone: isResponseTone(input?.tone) ? input.tone : DEFAULT_RESPONSE_CONFIG.tone,
+    tone: normalizeResponseTone(input?.tone),
     language: isResponseLanguage(input?.language) ? input.language : DEFAULT_RESPONSE_CONFIG.language,
     customToneNotes: sanitizeShortString(input?.customToneNotes),
     customBehaviorNotes: sanitizeShortString(input?.customBehaviorNotes),

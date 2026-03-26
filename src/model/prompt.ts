@@ -25,10 +25,6 @@ function buildDomainConstraint(domainAnchor: DomainAnchor): string | null {
 }
 
 function buildToneConstraint(tone: ModelExecutionInput["responseConfig"]["tone"]): string {
-  if (tone === "warm") {
-    return "Response tone: warm. Keep the wording friendly and encouraging without changing the reasoning.";
-  }
-
   if (tone === "direct") {
     return "Response tone: direct. Keep the wording concise and minimal without changing the reasoning.";
   }
@@ -38,6 +34,18 @@ function buildToneConstraint(tone: ModelExecutionInput["responseConfig"]["tone"]
   }
 
   return "Response tone: neutral. Keep the wording balanced and professional.";
+}
+
+function buildTryToneInstruction(tone: ModelExecutionInput["responseConfig"]["tone"]): string {
+  if (tone === "direct") {
+    return "Use shorter clauses, fewer qualifiers, and compressed wording.";
+  }
+
+  if (tone === "sharp") {
+    return "Use firmer, harder-edged wording with less cushioning when you disagree.";
+  }
+
+  return "Use plain, professional baseline wording.";
 }
 
 function buildLanguageConstraint(language: ModelExecutionInput["responseConfig"]["language"]): string {
@@ -92,19 +100,103 @@ function buildResponseConfigTaskLines(input: ModelExecutionInput): string[] {
   return lines;
 }
 
-function buildLiveBriefConstraint(input: ModelExecutionInput): string | null {
-  if (input.responseSurface !== "live-brief") {
-    return null;
+function buildTryLengthInstruction(length: ModelExecutionInput["responseLength"]): string {
+  if (length === "medium") {
+    return "Respond in 2 to 3 sentences.";
   }
 
-  return [
-    "This is the live /try surface.",
-    "Output only three short parts labeled Judgment, Reason, and either Sharper version or Clarifying question.",
-    "Keep the whole answer to about 3 to 6 short lines total.",
-    "Do not output long breakdowns, essay-style implications, multiple rewrite options, or extended lists.",
-    "Prefer one best rewrite over several alternatives.",
-    "If the claim is too vague to sharpen responsibly, ask one clarifying question instead."
-  ].join(" ");
+  if (length === "long") {
+    return "Respond in 4 to 6 sentences.";
+  }
+
+  return "Respond in exactly one sentence.";
+}
+
+function buildTryAttitudeInstruction(input: ModelExecutionInput): string {
+  if (input.responseConfig.attitude === "challenge") {
+    return input.responseLength === "short"
+      ? "Keep the answer firmer and more pressuring, and include one brief boundary marker so the challenge is visible in a single sentence."
+      : "Keep the answer firmer and more pressuring, but still clean and answer-only.";
+  }
+
+  if (input.responseConfig.attitude === "difficult") {
+    return "Keep the answer low-tolerance, more resistant, and more willing to reject weak framing directly, but still clean and answer-only.";
+  }
+
+  return "Keep the answer cooperative, clarifying, and low-friction.";
+}
+
+function buildTryAnswerObjective(input: ModelExecutionInput): string {
+  if (input.move === "NARROW") {
+    if (input.responseConfig.attitude === "challenge") {
+      return "Ask one firm clarifying question that presses the missing definition or basis.";
+    }
+
+    if (input.responseConfig.attitude === "difficult") {
+      return "Ask one low-tolerance clarifying question that forces specificity.";
+    }
+
+    return "Ask one clean clarifying question that would make the claim answerable.";
+  }
+
+  if (input.move === "PROVE") {
+    return "Give a clean answer that says the claim needs evidence before it can be treated as settled.";
+  }
+
+  if (input.framePreservingDirect && input.interventionMode === "calm") {
+    return "Treat the user's claim as the working premise and answer inside that frame without rebutting it.";
+  }
+
+  if (input.interventionMode === "counter") {
+    return "Answer directly, but intelligent pressure is allowed where poqo's chosen move permits it.";
+  }
+
+  if (input.interventionMode === "blunt") {
+    return "Answer directly and reject weak framing faster where poqo's chosen move permits it.";
+  }
+
+  return "Give the best final answer to the claim while following poqo's chosen move.";
+}
+
+function buildTryAnswerPrompt(input: ModelExecutionInput): ModelExecutionPrompt {
+  const domainConstraint = buildDomainConstraint(input.domainAnchor);
+  const config = input.responseConfig;
+
+  return {
+    instructionText: [
+      "You are poqo.",
+      "",
+      "Your job is to produce the best possible final answer to the claim.",
+      "",
+      "STRICT RULES:",
+      "- Only output the answer",
+      "- Do NOT explain reasoning",
+      "- Do NOT break into parts",
+      "- Do NOT use bullet points",
+      "- Do NOT provide multiple versions",
+      "- Do NOT say \"this claim\" or refer to structure",
+      "- Do NOT include analysis",
+      "- Do NOT use the phrases \"Broken down\", \"Implications\", or \"A stronger version\"",
+      "- Do NOT use numbered lists or labels",
+      buildTryLengthInstruction(input.responseLength),
+      buildLanguageConstraint(config.language),
+      buildTryToneInstruction(config.tone),
+      buildTryAttitudeInstruction(input),
+      domainConstraint,
+      "Ignore any response configuration item that conflicts with routing, proof basis, domain lock, or core poqo rules."
+    ].filter(Boolean).join("\n"),
+    taskText: [
+      `Silent routing move: ${input.move}`,
+      `Silent proof basis: ${input.proofType}`,
+      `Silent routing explanation: ${input.routingExplanation}`,
+      `Silent response objective: ${buildTryAnswerObjective(input)}`,
+      ...buildResponseConfigTaskLines(input),
+      input.domainAnchor ? `Silent domain anchor: ${input.domainAnchor}` : null,
+      "",
+      "Claim:",
+      input.prompt
+    ].filter(Boolean).join("\n")
+  };
 }
 
 function buildInstructionText(input: ModelExecutionInput): string {
@@ -141,25 +233,19 @@ function buildInstructionText(input: ModelExecutionInput): string {
           "Do NOT introduce opposing arguments.",
           "Do NOT evaluate whether the claim is true.",
           "Do NOT qualify the claim with an opposing view.",
-          "Do NOT say however, but, on the other hand, that's too broad, that's not true, or a more accurate version is.",
-          "Allowed moves: restate or sharpen the claim, break it into components, expand implications or consequences, suggest clearer or stronger wording, and identify assumptions without disputing them.",
-          "Preferred output pattern: restate or sharpen the claim, break it into components, expand implications, then offer clearer or stronger wording."
+          "Do NOT say however, but, on the other hand, that's too broad, that's not true, or a more accurate version is."
         ].join(" ")
       : input.interventionMode === "counter"
         ? [
             "This is DIRECT mode with counter posture.",
             "Start from the user's frame, but intelligent pushback is allowed.",
             "You may question weak reasoning, point out tension, or oppose the claim when justified.",
-            "Do not fake balance and do not become theatrical or hostile.",
-            "Preferred output pattern: restate the claim, pressure the weak point, expand implications, then sharpen the wording."
+            "Do not fake balance and do not become theatrical or hostile."
           ].join(" ")
         : [
             "This is DIRECT mode with blunt posture. These are hard constraints, not suggestions.",
-            "If you oppose the user's claim, the first sentence must reject or contradict it plainly.",
-            "The next step must present the competing claim you are asserting instead.",
-            "Then justify that replacement.",
+            "If you oppose the user's claim, reject or contradict it plainly.",
             "Do NOT default to that's too broad, it depends, a better version is, in some cases, on the other hand, both matter, or the real issue is.",
-            "Do NOT ask for sources or clarification unless the route is already NARROW.",
             "Do NOT soften into both-sides framing.",
             "Keep the answer grounded in reality, coherent, and useful instead of random, insulting, or theatrical."
           ].join(" ")
@@ -180,7 +266,6 @@ function buildInstructionText(input: ModelExecutionInput): string {
     interventionConstraint,
     buildResponseConfigConstraint(input),
     buildDomainConstraint(input.domainAnchor),
-    buildLiveBriefConstraint(input),
     directConstraint,
     "If the route is PROVE with world proof and freshness matters, be explicit about any uncertainty or verification needs."
   ].filter(Boolean).join(" ");
@@ -197,8 +282,7 @@ function buildTaskText(input: ModelExecutionInput): string {
           "- Treat the claim as the working premise.",
           "- Do not dispute it.",
           "- Do not introduce counterarguments.",
-          "- Do not use correction framing.",
-          "- Output shape: restate or sharpen the claim; break it into components; expand implications; offer clearer or stronger wording."
+          "- Do not use correction framing."
         ].join("\n")
       : input.interventionMode === "counter"
         ? [
@@ -210,24 +294,11 @@ function buildTaskText(input: ModelExecutionInput): string {
           ].join("\n")
         : [
             "Blunt DIRECT instructions:",
-            "- First sentence: reject or contradict the claim plainly.",
-            "- Second move: replace it with the competing claim you actually stand on.",
-            "- Then justify that replacement.",
+            "- Reject or contradict the claim plainly when you oppose it.",
             "- Do not use that's too broad, it depends, a better version is, in some cases, on the other hand, both matter, or the real issue is.",
             "- Do not soften into counter mode.",
-            "- Do not ask for sources or clarification unless the route is already NARROW.",
             "- Keep it grounded, coherent, and useful."
           ].join("\n")
-    : null;
-
-  const liveBriefPattern = input.responseSurface === "live-brief"
-    ? [
-        "Live /try output shape:",
-        "- Use exactly these labels: Judgment, Reason, and either Sharper version or Clarifying question.",
-        "- Keep each part to one short sentence.",
-        "- Keep the total output to about 3 to 6 short lines.",
-        "- Do not add extra sections, long lists, or multiple rewrite options."
-      ].join("\n")
     : null;
 
   return [
@@ -245,12 +316,12 @@ function buildTaskText(input: ModelExecutionInput): string {
     `framePreservingDirect: ${input.framePreservingDirect ? "yes" : "no"}`,
     `interventionMode: ${input.interventionMode}`,
     `responseSurface: ${input.responseSurface ?? "default"}`,
+    `responseLength: ${input.responseLength ?? "short"}`,
     ...buildResponseConfigTaskLines(input),
     `domainAnchor: ${input.domainAnchor ?? "none"}`,
     input.domainAnchor
       ? `Domain lock instructions: stay inside ${input.domainAnchor} and do not switch to adjacent domains or real-world analogies unless the user asks.`
       : null,
-    liveBriefPattern,
     directPattern,
     "",
     "Write the actual final natural-language answer for the user.",
@@ -262,6 +333,10 @@ function buildTaskText(input: ModelExecutionInput): string {
 // may rewrap it into provider-native request formats, but they should not edit
 // the judgment payload itself.
 export function buildModelExecutionPrompt(input: ModelExecutionInput): ModelExecutionPrompt {
+  if (input.responseSurface === "live-brief") {
+    return buildTryAnswerPrompt(input);
+  }
+
   return {
     instructionText: buildInstructionText(input),
     taskText: buildTaskText(input)

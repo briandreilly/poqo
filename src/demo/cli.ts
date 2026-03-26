@@ -23,7 +23,6 @@ const ATTITUDE_OPTIONS: Array<{ value: ResponseAttitude; label: string }> = [
 
 const TONE_OPTIONS: Array<{ value: ResponseTone; label: string }> = [
   { value: "neutral", label: "neutral" },
-  { value: "warm", label: "warm" },
   { value: "direct", label: "direct" },
   { value: "sharp", label: "sharp" }
 ];

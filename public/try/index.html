@@ -61,7 +61,7 @@
 
       .row {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: repeat(3, 1fr);
         gap: 12px;
       }
 
@@ -113,9 +113,16 @@
           <label for="tone">Tone</label>
           <select id="tone">
             <option value="neutral" selected>neutral</option>
-            <option value="warm">warm</option>
             <option value="direct">direct</option>
             <option value="sharp">sharp</option>
+          </select>
+        </div>
+        <div>
+          <label for="length">Length</label>
+          <select id="length">
+            <option value="short" selected>short</option>
+            <option value="medium">medium</option>
+            <option value="long">long</option>
           </select>
         </div>
       </section>
@@ -125,7 +132,8 @@
       </section>
 
       <section class="panel">
-        <pre id="output">Submit a claim to see the response.</pre>
+        <p id="meta" style="margin-bottom: 10px; color: #655d53;">Submit a claim to see the response.</p>
+        <pre id="output"></pre>
       </section>
     </main>
 
@@ -133,18 +141,22 @@
       const claimInput = document.getElementById("claim");
       const attitudeSelect = document.getElementById("attitude");
       const toneSelect = document.getElementById("tone");
+      const lengthSelect = document.getElementById("length");
       const submitButton = document.getElementById("submit");
       const output = document.getElementById("output");
+      const meta = document.getElementById("meta");
 
       async function runTry() {
         const claim = claimInput.value.trim();
         if (!claim) {
+          meta.textContent = "";
           output.textContent = "Enter a claim first.";
           return;
         }
 
         submitButton.disabled = true;
         submitButton.textContent = "Running...";
+        meta.textContent = "";
         output.textContent = "Running poqo...";
 
         try {
@@ -155,7 +167,8 @@
               claim,
               attitude: attitudeSelect.value,
               tone: toneSelect.value,
-              language: "en"
+              language: "en",
+              length: lengthSelect.value
             })
           });
 
@@ -164,16 +177,12 @@
             throw new Error(payload.error || "Request failed.");
           }
 
-          output.textContent = [
-            `Claim: ${payload.claim}`,
-            `Attitude: ${payload.attitude}`,
-            `Tone: ${payload.tone}`,
-            `Language: ${payload.language}`,
-            `Mode: ${payload.mode}`,
-            "",
-            payload.response
-          ].join("\n");
+          meta.textContent = payload.mode === "poqo-plus-model"
+            ? `${payload.modelName} via ${payload.modelProvider} · ${payload.length}`
+            : `Brief poqo fallback · ${payload.length}`;
+          output.textContent = payload.response;
         } catch (error) {
+          meta.textContent = "";
           output.textContent = error.message || "Request failed.";
         } finally {
           submitButton.disabled = false;

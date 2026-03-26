@@ -16,9 +16,11 @@ export type InterventionMode = "calm" | "counter" | "blunt";
 
 export type ResponseAttitude = "normal" | "challenge" | "difficult";
 
-export type ResponseTone = "neutral" | "warm" | "direct" | "sharp";
+export type ResponseTone = "neutral" | "direct" | "sharp";
 
 export type ResponseLanguage = "en" | "es";
+
+export type ResponseLength = "short" | "medium" | "long";
 
 export type DomainAnchor = "minecraft" | "product-ui" | "healthcare" | null;
 
@@ -85,6 +87,8 @@ export interface ModelConfig {
   provider: ModelProvider;
   apiKey: string | null;
   name: string;
+  maxOutputTokens?: number;
+  stopSequences?: string[];
 }
 
 export interface ResponseConfig {
@@ -121,6 +125,7 @@ export interface ModelExecutionInput {
   responseConfig: ResponseConfig;
   domainAnchor: DomainAnchor;
   responseSurface?: ResponseSurface;
+  responseLength?: ResponseLength;
 }
 
 export interface ModelExecutionPrompt {
@@ -257,7 +262,7 @@ export interface EvaluationResult {
   proofMatch: boolean;
   routingExplanation: string;
   quality: ResponseQualityAssessment;
-  profileDrift: boolean;
+  profileDrift?: boolean;
   driftReason?: string;
 }
 
@@ -276,7 +281,7 @@ export interface EvaluationSummary {
 }
 
 export interface EvaluationReport {
-  label: string;
+  label: BenchmarkId;
   benchmarkId: BenchmarkId;
   benchmarkName: string;
   benchmarkFilePath: string;
@@ -286,7 +291,7 @@ export interface EvaluationReport {
 }
 
 export interface CombinedEvaluationReport {
-  label: string;
+  label: "all";
   reports: EvaluationReport[];
   summary: EvaluationSummary;
 }
@@ -297,7 +302,13 @@ export interface HarnessRequest {
   mode: HarnessMode;
   interventionMode?: InterventionMode;
   responseConfig?: ResponseConfigInput;
-  domainContextAnchor?: DomainAnchor;
+  domainContextAnchor?: DomainAnchor | null;
+}
+
+export interface HarnessStatus {
+  modelAvailable: boolean;
+  modelProvider: ModelProvider;
+  modelName: string;
 }
 
 export interface HarnessResponse {
@@ -306,7 +317,7 @@ export interface HarnessResponse {
   mode: HarnessMode;
   interventionMode: InterventionMode;
   responseConfig: ResponseConfig;
-  effectiveDomainAnchor?: DomainAnchor;
+  effectiveDomainAnchor: DomainAnchor;
   move: Move;
   proofType: ProofType;
   routingExplanation: string;
@@ -315,16 +326,10 @@ export interface HarnessResponse {
   modelProvider: ModelProvider;
   modelName: string;
   modelAvailable: boolean;
+  modelError?: string;
   poqoCompletedBeforeModel: boolean;
   poqoStartedAt: string;
   poqoFinishedAt: string;
   modelStartedAt: string | null;
   modelFinishedAt: string | null;
-  modelError?: string;
-}
-
-export interface HarnessStatus {
-  modelAvailable: boolean;
-  modelProvider: ModelProvider;
-  modelName: string;
 }

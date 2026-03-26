@@ -57,6 +57,7 @@ export async function runOpenAIModel(
     },
     body: JSON.stringify({
       model: config.name,
+      max_output_tokens: config.maxOutputTokens,
       input: [
         {
           role: "system",
