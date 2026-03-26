@@ -54,6 +54,22 @@ function cleanClaim(claim: string): string {
   return claim.trim().replace(/[.?!]+$/u, "");
 }
 
+function classifyTryInputShape(claim: string): "question" | "statement" {
+  const trimmed = claim.trim();
+
+  if (!trimmed) {
+    return "statement";
+  }
+
+  if (trimmed.endsWith("?")) {
+    return "question";
+  }
+
+  return /^(?:is|are|am|do|does|did|can|could|should|would|will|what|why|how|when|where|who|whom|whose|which)\b/i.test(trimmed)
+    ? "question"
+    : "statement";
+}
+
 function finalizeSentence(text: string): string {
   const trimmed = text.trim().replace(/[.?!]+$/u, "");
   return trimmed ? `${trimmed}.` : "";
@@ -69,7 +85,7 @@ function splitSentences(text: string): string[] {
     .filter(Boolean);
 }
 
-function getMinSentences(length: ResponseLength): number {
+function getTargetSentenceCount(length: ResponseLength): number {
   if (length === "medium") {
     return 2;
   }
@@ -81,19 +97,7 @@ function getMinSentences(length: ResponseLength): number {
   return 1;
 }
 
-function getMaxSentences(length: ResponseLength): number {
-  if (length === "medium") {
-    return 3;
-  }
-
-  if (length === "long") {
-    return 6;
-  }
-
-  return 1;
-}
-
-function enforceSentenceCount(text: string, length: ResponseLength): string {
+function clampToExactSentenceCount(text: string, length: ResponseLength): string {
   const sentences = splitSentences(text)
     .map((sentence) => finalizeSentence(sentence))
     .filter(Boolean);
@@ -102,7 +106,7 @@ function enforceSentenceCount(text: string, length: ResponseLength): string {
     return "";
   }
 
-  return sentences.slice(0, getMaxSentences(length)).join(" ").trim();
+  return sentences.slice(0, getTargetSentenceCount(length)).join(" ").trim();
 }
 
 function sanitizeTryResponseText(text: string, length: ResponseLength): string {
@@ -117,7 +121,15 @@ function sanitizeTryResponseText(text: string, length: ResponseLength): string {
     .replace(/\s+/gu, " ")
     .trim();
 
-  return enforceSentenceCount(collapsed, length);
+  return clampToExactSentenceCount(collapsed, length);
+}
+
+function removeLeadingConnector(sentence: string): string {
+  return sentence.replace(/^(?:And|But)\s+/u, "").trim();
+}
+
+function sentenceStartsWithStrongLead(sentence: string): boolean {
+  return /^(?:No|That|This)\b/u.test(sentence);
 }
 
 function applyToneToSentence(sentence: string, tone: ResponseTone, position: number): string {
@@ -128,37 +140,50 @@ function applyToneToSentence(sentence: string, tone: ResponseTone, position: num
   }
 
   if (tone === "direct") {
-    return trimmed
-      .replace(/\busually\b/giu, "")
-      .replace(/\boften\b/giu, "")
-      .replace(/\bstill\b/giu, "")
-      .replace(/\s+/gu, " ")
-      .trim()
-      .replace(/\s+,/gu, ",");
+    return removeLeadingConnector(
+      trimmed
+        .replace(/\busually\b/giu, "")
+        .replace(/\boften\b/giu, "")
+        .replace(/\bstill\b/giu, "")
+        .replace(/\s+/gu, " ")
+        .trim()
+        .replace(/\s+,/gu, ",")
+    );
   }
 
   if (tone === "sharp") {
     if (position === 0) {
-      if (/^No\b/u.test(trimmed)) {
-        return trimmed;
-      }
-
-      if (/^That\b/u.test(trimmed) || /^This\b/u.test(trimmed)) {
+      if (sentenceStartsWithStrongLead(trimmed)) {
         return trimmed;
       }
 
       return `No, ${lowerFirst(trimmed)}`;
     }
 
-    return `And ${lowerFirst(trimmed)}`;
+    return removeLeadingConnector(trimmed);
   }
 
-  return trimmed;
+  return removeLeadingConnector(trimmed);
 }
 
-function meetsLengthRequirement(text: string, length: ResponseLength): boolean {
+function smoothFallbackSentenceFlow(sentences: string[]): string[] {
+  return sentences
+    .map((sentence, index) => {
+      const cleaned = index === 0 ? sentence.trim() : removeLeadingConnector(sentence);
+      if (!cleaned) {
+        return "";
+      }
+
+      return index === 0
+        ? cleaned
+        : cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+    })
+    .filter(Boolean);
+}
+
+function hasExactSentenceCount(text: string, length: ResponseLength): boolean {
   const sentences = splitSentences(text);
-  return sentences.length >= getMinSentences(length) && sentences.length <= getMaxSentences(length);
+  return sentences.length === getTargetSentenceCount(length);
 }
 
 function buildClarifyingQuestion(claim: string, result: PoqoResult, responseConfig: ResponseConfig): string {
@@ -439,17 +464,24 @@ function buildGenericSentences(claim: string, attitude: ResponseAttitude): strin
     if (subject && predicate) {
       return attitude === "difficult"
         ? [
-            `${subject} is not automatically ${predicate}`,
-            "The context and standard still matter",
-            "A universal reading goes too far",
-            "It is safer to treat it as conditional rather than absolute"
+            `Calling ${subject} ${predicate} as a blanket fact does not hold up`,
+            "That judgment needs to be tied to specific actions, evidence, or standards",
+            "Trait claims like that are too broad when they float free of examples",
+            "A narrower version is stronger than a universal one"
           ]
-        : [
-            `${subject} can be ${predicate} in some contexts`,
-            "The context and standard still matter",
-            "A universal reading reaches too far",
-            "It is safer to treat it as conditional rather than absolute"
-          ];
+        : attitude === "challenge"
+          ? [
+              `Calling ${subject} ${predicate} is too broad without a clearer standard or evidence`,
+              "The judgment needs to be tied to specific actions, statements, or examples",
+              "Trait claims like that depend on the standard you are using",
+              "A narrower version is easier to defend than a blanket one"
+            ]
+          : [
+              `Calling ${subject} ${predicate} is too broad without a clearer boundary`,
+              "It works better when tied to specific actions, statements, or examples",
+              "Trait judgments like that depend on the standard you are using",
+              "A narrower version is easier to defend than a blanket one"
+            ];
     }
   }
 
@@ -458,17 +490,24 @@ function buildGenericSentences(claim: string, attitude: ResponseAttitude): strin
     if (subject && predicate) {
       return attitude === "difficult"
         ? [
-            `${subject} are not automatically ${predicate}`,
-            "The context and standard still matter",
-            "A universal reading goes too far",
-            "It is safer to treat it as conditional rather than absolute"
+            `Calling ${subject} ${predicate} as a blanket fact does not hold up`,
+            "That judgment needs to be tied to specific examples, evidence, or standards",
+            "Group claims like that are too broad when they float free of examples",
+            "A narrower version is stronger than a universal one"
           ]
-        : [
-            `${subject} can be ${predicate} in some contexts`,
-            "The context and standard still matter",
-            "A universal reading reaches too far",
-            "It is safer to treat it as conditional rather than absolute"
-          ];
+        : attitude === "challenge"
+          ? [
+              `Calling ${subject} ${predicate} is too broad without a clearer standard or evidence`,
+              "The judgment needs to be tied to specific examples, conditions, or actions",
+              "Group claims like that depend on the standard you are using",
+              "A narrower version is easier to defend than a blanket one"
+            ]
+          : [
+              `Calling ${subject} ${predicate} is too broad without a clearer boundary`,
+              "It works better when tied to specific examples, conditions, or actions",
+              "Group judgments like that depend on the standard you are using",
+              "A narrower version is easier to defend than a blanket one"
+            ];
     }
   }
 
@@ -487,7 +526,77 @@ function buildGenericSentences(claim: string, attitude: ResponseAttitude): strin
       ];
 }
 
-function buildNarrowSentences(claim: string, result: PoqoResult, responseConfig: ResponseConfig): string[] {
+function canRefineStatement(claim: string, result: PoqoResult): boolean {
+  const lower = cleanClaim(claim).toLowerCase();
+  const words = lower.split(/\s+/u).filter(Boolean);
+
+  if (
+    result.analysis.signals.strongUnsupportedStance ||
+    result.analysis.signals.contestedFramingClaim ||
+    result.analysis.signals.argumentLoadedStatement ||
+    result.analysis.signals.coherentCritiqueBundle ||
+    result.analysis.signals.personallyScopedEvaluation
+  ) {
+    return true;
+  }
+
+  if (words.length < 3) {
+    return false;
+  }
+
+  return /\b(?:is|are|should|shouldn't|should not|doesn't|does not|can|cannot|can't|always|never|best|better|worse|broken|healthy|toxic|honest)\b/u.test(lower);
+}
+
+function buildQuestionAnswerSentences(claim: string, attitude: ResponseAttitude): string[] {
+  const lower = cleanClaim(claim).toLowerCase();
+
+  if (lower.includes("social media") && lower.includes("toxic")) {
+    return buildToxicSentences(attitude);
+  }
+
+  if (lower.includes("coffee") && lower.includes("healthy")) {
+    return buildHealthySentences(attitude);
+  }
+
+  if (lower.includes("oak planks") && lower.includes("minecraft")) {
+    return buildOakMinecraftSentences(attitude);
+  }
+
+  if (lower.includes("ai") && lower.includes("primary school")) {
+    return buildDoesNotBelongSentences(attitude);
+  }
+
+  if (lower.includes("best")) {
+    return buildBestGenericSentences(claim, attitude);
+  }
+
+  if (lower.includes("always")) {
+    return buildAlwaysSentences(attitude);
+  }
+
+  return attitude === "difficult"
+    ? [
+        "The answer depends on a clearer boundary than the question currently gives",
+        "A narrower version would make the answer more reliable",
+        "The core issue is still answerable once the missing condition is stated",
+        "Without that condition, the answer should stay guarded"
+      ]
+    : attitude === "challenge"
+      ? [
+          "The answer depends on a clearer boundary than the question currently gives",
+          "A narrower version would make the answer more reliable",
+          "The missing condition is doing too much work right now",
+          "Once that condition is stated, the answer lands more cleanly"
+        ]
+      : [
+          "The answer depends on a clearer boundary than the question currently gives",
+          "A narrower version would make the answer more reliable",
+          "The missing condition matters more than the wording implies",
+          "Once that condition is stated, the answer lands more cleanly"
+        ];
+}
+
+function buildNarrowQuestionSentences(claim: string, result: PoqoResult, responseConfig: ResponseConfig): string[] {
   const question = finalizeSentence(buildClarifyingQuestion(claim, result, responseConfig));
 
   if (responseConfig.attitude === "difficult") {
@@ -514,6 +623,14 @@ function buildNarrowSentences(claim: string, result: PoqoResult, responseConfig:
     "A concrete example would make the answer tighter",
     "The best answer depends on the boundary you have in mind"
   ];
+}
+
+function buildNarrowStatementSentences(claim: string, result: PoqoResult, responseConfig: ResponseConfig): string[] {
+  if (canRefineStatement(claim, result)) {
+    return buildGenericSentences(claim, responseConfig.attitude);
+  }
+
+  return buildNarrowQuestionSentences(claim, result, responseConfig);
 }
 
 function buildProveSentences(responseConfig: ResponseConfig): string[] {
@@ -544,24 +661,34 @@ function buildProveSentences(responseConfig: ResponseConfig): string[] {
 }
 
 function buildFallbackSentences(claim: string, result: PoqoResult, responseConfig: ResponseConfig): string[] {
+  const inputShape = classifyTryInputShape(claim);
+
   if (result.move === "NARROW") {
-    return buildNarrowSentences(claim, result, responseConfig);
+    return inputShape === "question"
+      ? buildQuestionAnswerSentences(claim, responseConfig.attitude)
+      : buildNarrowStatementSentences(claim, result, responseConfig);
   }
 
   if (result.move === "PROVE") {
-    return buildProveSentences(responseConfig);
+    return inputShape === "question"
+      ? buildQuestionAnswerSentences(claim, responseConfig.attitude)
+      : buildProveSentences(responseConfig);
   }
 
-  return buildGenericSentences(claim, responseConfig.attitude);
+  return inputShape === "question"
+    ? buildQuestionAnswerSentences(claim, responseConfig.attitude)
+    : buildGenericSentences(claim, responseConfig.attitude);
 }
 
 function formatLiveTryResponse(claim: string, result: PoqoResult, responseConfig: ResponseConfig, length: ResponseLength): string {
-  const sentences = buildFallbackSentences(claim, result, responseConfig)
-    .map((sentence, index) => applyToneToSentence(sentence, responseConfig.tone, index))
-    .map((sentence) => finalizeSentence(sentence))
-    .filter(Boolean);
+  const sentences = smoothFallbackSentenceFlow(
+    buildFallbackSentences(claim, result, responseConfig)
+      .map((sentence, index) => applyToneToSentence(sentence, responseConfig.tone, index))
+      .map((sentence) => finalizeSentence(sentence))
+      .filter(Boolean)
+  );
 
-  const targetCount = length === "short" ? 1 : length === "medium" ? 2 : 4;
+  const targetCount = getTargetSentenceCount(length);
   return sentences.slice(0, targetCount).join(" ").trim();
 }
 
@@ -630,7 +757,7 @@ export async function buildTryResponse(
     );
 
     const cleanedResponse = sanitizeTryResponseText(modelResult.responseText, length);
-    const finalResponse = meetsLengthRequirement(cleanedResponse, length) ? cleanedResponse : fallbackResponse;
+    const finalResponse = hasExactSentenceCount(cleanedResponse, length) ? cleanedResponse : fallbackResponse;
 
     return {
       ...basePayload,
