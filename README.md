@@ -1,5 +1,13 @@
 # poqo
 
+## Live Demo
+
+👉 https://poqo.pages.dev/try
+
+Try poqo: a controllable response engine that shapes answers by attitude, tone, and length.
+
+[![Live Demo](https://img.shields.io/badge/demo-live-green)](https://poqo.pages.dev/try)
+
 poqo is a judgment engine with one real Constitution and a separate operating layer.
 
 👉 See a full example: [Homework Judgment Demo](docs/demo-homework-judgment.md)
