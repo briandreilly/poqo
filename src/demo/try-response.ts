@@ -22,8 +22,8 @@ export const DEFAULT_TRY_PROFILE_ID: ProfileId = "default";
 
 export interface TryRequestBody {
   claim?: string;
-  attitude?: ResponseAttitude;
-  tone?: ResponseTone | "warm";
+  attitude?: ResponseAttitude | "normal" | "challenge" | "difficult";
+  tone?: ResponseTone | "warm" | "sharp";
   language?: ResponseLanguage;
   length?: ResponseLength;
 }
@@ -35,19 +35,30 @@ export function isValidTryRequest(body: Partial<TryRequestBody>): body is TryReq
     body.claim &&
     typeof body.claim === "string" &&
     body.claim.trim().length > 0 &&
-    (!body.attitude || body.attitude === "normal" || body.attitude === "challenge" || body.attitude === "difficult") &&
-    (!tone || tone === "neutral" || tone === "warm" || tone === "direct" || tone === "sharp") &&
+    (!body.attitude || ["balanced", "challenging", "normal", "challenge", "difficult"].includes(body.attitude)) &&
+    (!tone || tone === "neutral" || tone === "direct" || tone === "warm" || tone === "sharp") &&
     (!body.language || body.language === "en" || body.language === "es") &&
-    (!body.length || body.length === "short" || body.length === "medium" || body.length === "long")
+    (!body.length || body.length === "reaction" || body.length === "short" || body.length === "medium" || body.length === "long")
   );
 }
 
-function pickByAttitude<T>(attitude: ResponseAttitude, variants: { normal: T; challenge: T; difficult: T }): T {
-  return variants[attitude];
+function pickByAttitude<T>(
+  attitude: ResponseAttitude,
+  variants: { balanced?: T; challenging?: T; normal?: T; challenge?: T; difficult?: T }
+): T {
+  if (attitude === "balanced") {
+    return (variants.balanced ?? variants.normal) as T;
+  }
+
+  return (variants.challenging ?? variants.difficult ?? variants.challenge) as T;
 }
 
 function normalizeTryLength(length?: ResponseLength): ResponseLength {
-  return length === "medium" || length === "long" ? length : "short";
+  if (length === "reaction" || length === "medium" || length === "long") {
+    return length;
+  }
+
+  return "short";
 }
 
 function cleanClaim(claim: string): string {
@@ -85,28 +96,51 @@ function splitSentences(text: string): string[] {
     .filter(Boolean);
 }
 
-function getTargetSentenceCount(length: ResponseLength): number {
+function countWords(text: string): number {
+  return text.trim().split(/\s+/u).filter(Boolean).length;
+}
+
+function clampToWordCount(text: string, maxWords: number): string {
+  const words = text.trim().split(/\s+/u).filter(Boolean);
+  if (words.length === 0) {
+    return "";
+  }
+
+  const trimmed = words.slice(0, maxWords).join(" ").replace(/[,:;]+$/u, "");
+  return /[.?!]$/u.test(trimmed) ? trimmed : `${trimmed}.`;
+}
+
+function getExactSentenceCount(length: ResponseLength): number | null {
+  if (length === "short") {
+    return 1;
+  }
+
   if (length === "medium") {
     return 2;
   }
 
-  if (length === "long") {
-    return 4;
-  }
-
-  return 1;
+  return null;
 }
 
-function clampToExactSentenceCount(text: string, length: ResponseLength): string {
+function clampToLengthBucket(text: string, length: ResponseLength): string {
+  if (length === "reaction") {
+    return clampToWordCount(text, 2);
+  }
+
+  if (length === "long") {
+    return clampToWordCount(text, 100);
+  }
+
+  const exactSentenceCount = getExactSentenceCount(length);
   const sentences = splitSentences(text)
     .map((sentence) => finalizeSentence(sentence))
     .filter(Boolean);
 
-  if (sentences.length === 0) {
+  if (sentences.length === 0 || exactSentenceCount == null) {
     return "";
   }
 
-  return sentences.slice(0, getTargetSentenceCount(length)).join(" ").trim();
+  return sentences.slice(0, exactSentenceCount).join(" ").trim();
 }
 
 function sanitizeTryResponseText(text: string, length: ResponseLength): string {
@@ -121,7 +155,7 @@ function sanitizeTryResponseText(text: string, length: ResponseLength): string {
     .replace(/\s+/gu, " ")
     .trim();
 
-  return clampToExactSentenceCount(collapsed, length);
+  return clampToLengthBucket(collapsed, length);
 }
 
 function removeLeadingConnector(sentence: string): string {
@@ -140,7 +174,7 @@ function applyToneToSentence(sentence: string, tone: ResponseTone, position: num
   }
 
   if (tone === "direct") {
-    return removeLeadingConnector(
+    const compressed = removeLeadingConnector(
       trimmed
         .replace(/\busually\b/giu, "")
         .replace(/\boften\b/giu, "")
@@ -149,18 +183,12 @@ function applyToneToSentence(sentence: string, tone: ResponseTone, position: num
         .trim()
         .replace(/\s+,/gu, ",")
     );
-  }
 
-  if (tone === "sharp") {
-    if (position === 0) {
-      if (sentenceStartsWithStrongLead(trimmed)) {
-        return trimmed;
-      }
-
-      return `No, ${lowerFirst(trimmed)}`;
+    if (position === 0 && !sentenceStartsWithStrongLead(compressed) && /^(?:it|that|this)\b/i.test(compressed)) {
+      return compressed;
     }
 
-    return removeLeadingConnector(trimmed);
+    return compressed;
   }
 
   return removeLeadingConnector(trimmed);
@@ -182,8 +210,24 @@ function smoothFallbackSentenceFlow(sentences: string[]): string[] {
 }
 
 function hasExactSentenceCount(text: string, length: ResponseLength): boolean {
-  const sentences = splitSentences(text);
-  return sentences.length === getTargetSentenceCount(length);
+  const exactSentenceCount = getExactSentenceCount(length);
+  if (exactSentenceCount == null) {
+    return true;
+  }
+
+  return splitSentences(text).length === exactSentenceCount;
+}
+
+function satisfiesLengthBucket(text: string, length: ResponseLength): boolean {
+  if (length === "reaction") {
+    return countWords(text) <= 2;
+  }
+
+  if (length === "long") {
+    return countWords(text) <= 100;
+  }
+
+  return hasExactSentenceCount(text, length);
 }
 
 function violatesStatementOutputContract(text: string): boolean {
@@ -251,21 +295,12 @@ function buildClarifyingQuestion(claim: string, result: PoqoResult, responseConf
 }
 
 function buildOakMinecraftSentences(attitude: ResponseAttitude): string[] {
-  if (attitude === "difficult") {
+  if (attitude === "challenging") {
     return [
       "Oak planks are not the best material for every Minecraft base",
       "They are easy to obtain and versatile, which makes them a strong default",
       "Other materials can fit defense, cost, or aesthetics better",
       "They work well as a baseline, not as a universal best choice"
-    ];
-  }
-
-  if (attitude === "challenge") {
-    return [
-      "Oak planks are a reliable default for a Minecraft base because they are easy to obtain and versatile, but best is too broad as stated",
-      "Calling them the best is too broad because different builds reward different materials",
-      "Stone, deep slate, or specialty blocks can fit defense or style better",
-      "They are strong as a default, not as a universal winner"
     ];
   }
 
@@ -278,21 +313,12 @@ function buildOakMinecraftSentences(attitude: ResponseAttitude): string[] {
 }
 
 function buildToxicSentences(attitude: ResponseAttitude): string[] {
-  if (attitude === "difficult") {
+  if (attitude === "challenging") {
     return [
       "Social media is not uniformly toxic, but many platforms reward manipulative, addictive, or corrosive behavior",
       "The damage usually comes from design incentives, moderation failures, and outrage loops",
       "Some platforms and uses are worse than others",
       "The pattern is real, but it is not identical everywhere"
-    ];
-  }
-
-  if (attitude === "challenge") {
-    return [
-      "Social media often rewards manipulative, addictive, or corrosive behavior, but that needs a clearer boundary",
-      "That pattern is strongest when engagement is optimized at any cost",
-      "Platform design, incentives, and moderation shape most of the harm",
-      "The effect is real, but it varies by platform and use"
     ];
   }
 
@@ -305,21 +331,12 @@ function buildToxicSentences(attitude: ResponseAttitude): string[] {
 }
 
 function buildHealthySentences(attitude: ResponseAttitude): string[] {
-  if (attitude === "difficult") {
+  if (attitude === "challenging") {
     return [
       "Coffee is not simply healthy",
       "It can be beneficial in moderation, but the effect depends on intake and the person",
       "Sleep, sensitivity, anxiety, and overall health context matter",
       "Moderate use is very different from heavy use"
-    ];
-  }
-
-  if (attitude === "challenge") {
-    return [
-      "Coffee can be beneficial in moderation, but healthy is still too broad without a clearer boundary",
-      "The word healthy is too broad if you do not specify the benefit or the amount",
-      "Sleep, sensitivity, anxiety, and overall health context still matter",
-      "Moderate use is not the same as heavy use"
     ];
   }
 
@@ -332,21 +349,12 @@ function buildHealthySentences(attitude: ResponseAttitude): string[] {
 }
 
 function buildBrokenSentences(attitude: ResponseAttitude): string[] {
-  if (attitude === "difficult") {
+  if (attitude === "challenging") {
     return [
       "The system is not functioning well for a lot of people",
       "Persistent failures in access, cost, and consistency make it unreliable",
       "The harm is practical, not abstract",
       "The result is a system many people cannot trust to work when they need it"
-    ];
-  }
-
-  if (attitude === "challenge") {
-    return [
-      "The system has persistent failures that make it unreliable for many people, but broken is still too broad without a clearer target",
-      "The biggest problems usually show up in cost, access, and consistency",
-      "Those failures are structural rather than isolated",
-      "That is why the criticism keeps resurfacing"
     ];
   }
 
@@ -359,21 +367,12 @@ function buildBrokenSentences(attitude: ResponseAttitude): string[] {
 }
 
 function buildDoesNotBelongSentences(attitude: ResponseAttitude): string[] {
-  if (attitude === "difficult") {
+  if (attitude === "challenging") {
     return [
       "It should not be treated as a primary tool there",
       "Human judgment, practice, and foundational skills need to stay first",
       "Overreliance too early weakens core development",
       "A narrow supporting role is safer than a central one"
-    ];
-  }
-
-  if (attitude === "challenge") {
-    return [
-      "It should have a very limited role there and stay secondary to human judgment, but the boundary still needs to stay clear",
-      "Foundational skills, practice, and human instruction still need priority",
-      "Too much dependence too early weakens core development",
-      "A supporting role makes more sense than a central one"
     ];
   }
 
@@ -386,21 +385,12 @@ function buildDoesNotBelongSentences(attitude: ResponseAttitude): string[] {
 }
 
 function buildAlwaysSentences(attitude: ResponseAttitude): string[] {
-  if (attitude === "difficult") {
+  if (attitude === "challenging") {
     return [
       "That is not automatically true",
       "Lowering prices can help growth only when it does not wreck margins or positioning",
       "Unit economics, retention, and competition still matter",
       "Cheaper is only better when the business can sustain it"
-    ];
-  }
-
-  if (attitude === "challenge") {
-    return [
-      "Lowering prices can help growth when it improves acquisition without wrecking margins, but always is too broad as stated",
-      "Always is too broad because retention, unit economics, and positioning still matter",
-      "A cheaper price is not automatically a better strategy",
-      "The right move depends on whether the business can sustain the tradeoff"
     ];
   }
 
@@ -415,21 +405,12 @@ function buildAlwaysSentences(attitude: ResponseAttitude): string[] {
 function buildBestGenericSentences(claim: string, attitude: ResponseAttitude): string[] {
   const trimmed = cleanClaim(claim);
 
-  if (attitude === "difficult") {
+  if (attitude === "challenging") {
     return [
       `${trimmed.replace(/\bbest\b/iu, "not the best")} in every case`,
       "It can still be a strong option when the goal is clear",
       "The better choice depends on context, constraints, and purpose",
       "It is safer to treat it as a strong option, not a universal best"
-    ];
-  }
-
-  if (attitude === "challenge") {
-    return [
-      `${trimmed.replace(/\bbest\b/iu, "a strong option")} when the goal is clear, but best is still too broad as stated`,
-      "Calling it the best is too broad because context and purpose still matter",
-      "A different option can be better under different constraints",
-      "That is why a universal best is hard to defend"
     ];
   }
 
@@ -473,59 +454,64 @@ function buildGenericSentences(claim: string, attitude: ResponseAttitude): strin
     return buildBestGenericSentences(claim, attitude);
   }
 
+  if (lower.includes(" will ")) {
+    const [subject, predicate] = trimmed.split(/\swill\s/iu, 2);
+    if (subject && predicate) {
+      return attitude === "challenging"
+        ? [
+            `The prediction that ${subject} will ${predicate} is too broad as a universal forecast`,
+            "A stronger version needs a clearer condition, timeline, or scope",
+            "Sweeping forecasts like that usually outrun the evidence behind them",
+            "A narrower prediction is easier to defend than a total one"
+          ]
+        : [
+            `The prediction that ${subject} will ${predicate} is too broad without a clearer boundary`,
+            "It works better with a clearer timeline, condition, or scope",
+            "Sweeping forecasts like that usually outrun the evidence behind them",
+            "A narrower prediction is easier to defend than a total one"
+          ];
+    }
+  }
+
   if (lower.includes(" is ")) {
     const [subject, predicate] = trimmed.split(/\sis\s/iu, 2);
     if (subject && predicate) {
-      return attitude === "difficult"
+      return attitude === "challenging"
         ? [
             `Calling ${subject} ${predicate} as a blanket fact does not hold up`,
             "That judgment needs to be tied to specific actions, evidence, or standards",
             "Trait claims like that are too broad when they float free of examples",
             "A narrower version is stronger than a universal one"
           ]
-        : attitude === "challenge"
-          ? [
-              `Calling ${subject} ${predicate} is too broad without a clearer standard or evidence`,
-              "The judgment needs to be tied to specific actions, statements, or examples",
-              "Trait claims like that depend on the standard you are using",
-              "A narrower version is easier to defend than a blanket one"
-            ]
-          : [
-              `Calling ${subject} ${predicate} is too broad without a clearer boundary`,
-              "It works better when tied to specific actions, statements, or examples",
-              "Trait judgments like that depend on the standard you are using",
-              "A narrower version is easier to defend than a blanket one"
-            ];
+        : [
+            `Calling ${subject} ${predicate} is too broad without a clearer boundary`,
+            "It works better when tied to specific actions, statements, or examples",
+            "Trait judgments like that depend on the standard you are using",
+            "A narrower version is easier to defend than a blanket one"
+          ];
     }
   }
 
   if (lower.includes(" are ")) {
     const [subject, predicate] = trimmed.split(/\sare\s/iu, 2);
     if (subject && predicate) {
-      return attitude === "difficult"
+      return attitude === "challenging"
         ? [
             `Calling ${subject} ${predicate} as a blanket fact does not hold up`,
             "That judgment needs to be tied to specific examples, evidence, or standards",
             "Group claims like that are too broad when they float free of examples",
             "A narrower version is stronger than a universal one"
           ]
-        : attitude === "challenge"
-          ? [
-              `Calling ${subject} ${predicate} is too broad without a clearer standard or evidence`,
-              "The judgment needs to be tied to specific examples, conditions, or actions",
-              "Group claims like that depend on the standard you are using",
-              "A narrower version is easier to defend than a blanket one"
-            ]
-          : [
-              `Calling ${subject} ${predicate} is too broad without a clearer boundary`,
-              "It works better when tied to specific examples, conditions, or actions",
-              "Group judgments like that depend on the standard you are using",
-              "A narrower version is easier to defend than a blanket one"
-            ];
+        : [
+            `Calling ${subject} ${predicate} is too broad without a clearer boundary`,
+            "It works better when tied to specific examples, conditions, or actions",
+            "Group judgments like that depend on the standard you are using",
+            "A narrower version is easier to defend than a blanket one"
+          ];
     }
   }
 
-  return attitude === "difficult"
+  return attitude === "challenging"
     ? [
         `${trimmed} is not strong enough as a universal statement`,
         "The context still matters",
@@ -558,7 +544,7 @@ function canRefineStatement(claim: string, result: PoqoResult): boolean {
     return false;
   }
 
-  return /\b(?:is|are|should|shouldn't|should not|doesn't|does not|can|cannot|can't|always|never|best|better|worse|broken|healthy|toxic|honest)\b/u.test(lower);
+  return /\b(?:is|are|will|should|shouldn't|should not|doesn't|does not|can|cannot|can't|always|never|best|better|worse|broken|healthy|toxic|honest|replace)\b/u.test(lower);
 }
 
 function buildQuestionAnswerSentences(claim: string, attitude: ResponseAttitude): string[] {
@@ -588,46 +574,30 @@ function buildQuestionAnswerSentences(claim: string, attitude: ResponseAttitude)
     return buildAlwaysSentences(attitude);
   }
 
-  return attitude === "difficult"
+  return attitude === "challenging"
     ? [
         "The answer depends on a clearer boundary than the question currently gives",
         "A narrower version would make the answer more reliable",
         "The core issue is still answerable once the missing condition is stated",
         "Without that condition, the answer should stay guarded"
       ]
-    : attitude === "challenge"
-      ? [
-          "The answer depends on a clearer boundary than the question currently gives",
-          "A narrower version would make the answer more reliable",
-          "The missing condition is doing too much work right now",
-          "Once that condition is stated, the answer lands more cleanly"
-        ]
-      : [
-          "The answer depends on a clearer boundary than the question currently gives",
-          "A narrower version would make the answer more reliable",
-          "The missing condition matters more than the wording implies",
-          "Once that condition is stated, the answer lands more cleanly"
-        ];
+    : [
+        "The answer depends on a clearer boundary than the question currently gives",
+        "A narrower version would make the answer more reliable",
+        "The missing condition matters more than the wording implies",
+        "Once that condition is stated, the answer lands more cleanly"
+      ];
 }
 
 function buildNarrowQuestionSentences(claim: string, result: PoqoResult, responseConfig: ResponseConfig): string[] {
   const question = finalizeSentence(buildClarifyingQuestion(claim, result, responseConfig));
 
-  if (responseConfig.attitude === "difficult") {
+  if (responseConfig.attitude === "challenging") {
     return [
       "I need a precise version before I answer this",
       question,
       "Right now the wording is doing too much work",
       "State the boundary clearly and the answer can be sharper"
-    ];
-  }
-
-  if (responseConfig.attitude === "challenge") {
-    return [
-      "I need a clearer version before this can be answered well",
-      question,
-      "The missing definition is doing too much work right now",
-      "A concrete example would let the answer land cleanly"
     ];
   }
 
@@ -644,25 +614,28 @@ function buildNarrowStatementSentences(claim: string, result: PoqoResult, respon
     return buildGenericSentences(claim, responseConfig.attitude);
   }
 
-  return buildNarrowQuestionSentences(claim, result, responseConfig);
+  return responseConfig.attitude === "challenging"
+    ? [
+        "That statement is too broad to stand on its own",
+        "A tighter version needs a clearer boundary, condition, or example",
+        "Right now the wording reaches farther than the support behind it",
+        "A narrower version would be easier to defend"
+      ]
+    : [
+        "That statement is too broad without a clearer boundary",
+        "A tighter version needs a clearer condition or example",
+        "Right now the wording reaches farther than the support behind it",
+        "A narrower version would be easier to defend"
+      ];
 }
 
 function buildProveSentences(responseConfig: ResponseConfig): string[] {
-  if (responseConfig.attitude === "difficult") {
+  if (responseConfig.attitude === "challenging") {
     return [
       "No, that is not settled without evidence",
       "Broad real-world claims do not land on assertion alone",
       "The stronger the certainty, the more support it needs",
       "Without that support, the answer has to stay provisional"
-    ];
-  }
-
-  if (responseConfig.attitude === "challenge") {
-    return [
-      "That needs evidence before it can be treated as settled",
-      "Broad real-world claims do not land on assertion alone",
-      "The stronger the certainty, the more support it needs",
-      "Without that support, the answer should stay provisional"
     ];
   }
 
@@ -694,7 +667,41 @@ function buildFallbackSentences(claim: string, result: PoqoResult, responseConfi
     : buildGenericSentences(claim, responseConfig.attitude);
 }
 
+function buildReactionText(claim: string, result: PoqoResult, responseConfig: ResponseConfig): string {
+  const lower = cleanClaim(claim).toLowerCase();
+
+  if (lower.includes("coffee") && lower.includes("healthy")) {
+    return responseConfig.attitude === "challenging" ? "Not simply." : "In moderation.";
+  }
+
+  if (lower.includes("oak planks") && lower.includes("minecraft")) {
+    return responseConfig.attitude === "challenging" ? "Too absolute." : "Strong default.";
+  }
+
+  if (lower.includes("social media") && lower.includes("toxic")) {
+    return responseConfig.attitude === "challenging" ? "Too broad." : "Broad concern.";
+  }
+
+  if (lower.includes("primary school") && lower.includes("ai")) {
+    return responseConfig.attitude === "challenging" ? "Not central." : "Very limited.";
+  }
+
+  if (result.move === "PROVE") {
+    return responseConfig.attitude === "challenging" ? "Unproven." : "Needs evidence.";
+  }
+
+  if (result.move === "NARROW") {
+    return responseConfig.attitude === "challenging" ? "Not defensible." : "Too broad.";
+  }
+
+  return responseConfig.attitude === "challenging" ? "Too broad." : "Reasonable claim.";
+}
+
 function formatLiveTryResponse(claim: string, result: PoqoResult, responseConfig: ResponseConfig, length: ResponseLength): string {
+  if (length === "reaction") {
+    return clampToLengthBucket(buildReactionText(claim, result, responseConfig), length);
+  }
+
   const sentences = smoothFallbackSentenceFlow(
     buildFallbackSentences(claim, result, responseConfig)
       .map((sentence, index) => applyToneToSentence(sentence, responseConfig.tone, index))
@@ -702,8 +709,7 @@ function formatLiveTryResponse(claim: string, result: PoqoResult, responseConfig
       .filter(Boolean)
   );
 
-  const targetCount = getTargetSentenceCount(length);
-  return sentences.slice(0, targetCount).join(" ").trim();
+  return clampToLengthBucket(sentences.join(" ").trim(), length);
 }
 
 export async function buildTryResponse(
@@ -715,7 +721,7 @@ export async function buildTryResponse(
 ) {
   const responseConfig = normalizeResponseConfig({
     attitude: body.attitude,
-    tone: body.tone === "warm" ? "neutral" : body.tone,
+    tone: body.tone === "sharp" ? "direct" : body.tone === "warm" ? "neutral" : body.tone,
     language: body.language
   });
   const length = normalizeTryLength(body.length);
@@ -773,7 +779,7 @@ export async function buildTryResponse(
     const cleanedResponse = sanitizeTryResponseText(modelResult.responseText, length);
     const inputShape = classifyTryInputShape(claim);
     const modelViolatesStatementRule = inputShape === "statement" && violatesStatementOutputContract(cleanedResponse);
-    const finalResponse = hasExactSentenceCount(cleanedResponse, length) && !modelViolatesStatementRule
+    const finalResponse = satisfiesLengthBucket(cleanedResponse, length) && !modelViolatesStatementRule
       ? cleanedResponse
       : fallbackResponse;
 

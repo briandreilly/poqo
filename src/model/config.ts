@@ -3,6 +3,7 @@ import type { ModelConfig, ModelProvider, ResponseLength } from "../types.js";
 const DEFAULT_PROVIDER: ModelProvider = "openai";
 const DEFAULT_MODEL_NAME = "gpt-5.4";
 const DEFAULT_TRY_MODEL_NAME = "gpt-4.1-mini";
+const DEFAULT_TRY_REACTION_MAX_OUTPUT_TOKENS = 12;
 const DEFAULT_TRY_SHORT_MAX_OUTPUT_TOKENS = 60;
 const DEFAULT_TRY_MEDIUM_MAX_OUTPUT_TOKENS = 100;
 const DEFAULT_TRY_LONG_MAX_OUTPUT_TOKENS = 180;
@@ -11,15 +12,13 @@ type ModelEnvSource = Record<string, string | undefined | null>;
 function resolveProvider(source: ModelEnvSource): ModelProvider {
   const raw = (source.MODEL_PROVIDER ?? DEFAULT_PROVIDER).trim().toLowerCase();
 
-  if (raw !== "openai") {
+  if (raw != "openai") {
     throw new Error(`Unsupported MODEL_PROVIDER: ${raw}`);
   }
 
   return raw;
 }
 
-// poqo instances are single-model by design. This config surface stays tiny on
-// purpose so provider details do not spread into core judgment code.
 export function getModelConfigFromSource(source: ModelEnvSource): ModelConfig {
   return {
     provider: resolveProvider(source),
@@ -33,6 +32,10 @@ export function getModelConfig(): ModelConfig {
 }
 
 function getTryMaxOutputTokens(length: ResponseLength): number {
+  if (length === "reaction") {
+    return DEFAULT_TRY_REACTION_MAX_OUTPUT_TOKENS;
+  }
+
   if (length === "medium") {
     return DEFAULT_TRY_MEDIUM_MAX_OUTPUT_TOKENS;
   }

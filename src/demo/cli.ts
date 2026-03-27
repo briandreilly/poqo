@@ -4,27 +4,33 @@ import { stdin as input, stdout as output } from "node:process";
 import { loadRuntimeGuide } from "../constitution/loader.js";
 import { resolveDomainAnchor } from "../domain-anchor.js";
 import { runPoqo } from "../engine.js";
+import { getTryModelConfig, getModelConfig } from "../model/config.js";
 import { getModelStatus, runConfiguredModel } from "../model/client.js";
 import { isFramePreservingDirect } from "../response/builder.js";
 import { mapResponseAttitudeToInterventionMode, normalizeResponseConfig } from "../response/config.js";
 import { buildPoqoBrief } from "./harness-brief.js";
 import { loadLocalEnv } from "./load-env.js";
-import type { ProfileId, ResponseAttitude, ResponseTone } from "../types.js";
+import type { ProfileId, ResponseAttitude, ResponseLength, ResponseTone } from "../types.js";
 
 loadLocalEnv();
 
 const DEFAULT_PROFILE_ID: ProfileId = "default";
 
 const ATTITUDE_OPTIONS: Array<{ value: ResponseAttitude; label: string }> = [
-  { value: "normal", label: "normal" },
-  { value: "challenge", label: "challenge" },
-  { value: "difficult", label: "difficult" }
+  { value: "balanced", label: "balanced" },
+  { value: "challenging", label: "challenging" }
 ];
 
 const TONE_OPTIONS: Array<{ value: ResponseTone; label: string }> = [
   { value: "neutral", label: "neutral" },
-  { value: "direct", label: "direct" },
-  { value: "sharp", label: "sharp" }
+  { value: "direct", label: "direct" }
+];
+
+const LENGTH_OPTIONS: Array<{ value: ResponseLength; label: string }> = [
+  { value: "reaction", label: "reaction" },
+  { value: "short", label: "short" },
+  { value: "medium", label: "medium" },
+  { value: "long", label: "long" }
 ];
 
 function printOptions(options: Array<{ label: string }>): void {
@@ -73,24 +79,22 @@ async function main(): Promise<void> {
     const attitude = await chooseOption(rl, "Select attitude:", ATTITUDE_OPTIONS, 0);
     console.log();
     const tone = await chooseOption(rl, "Select tone:", TONE_OPTIONS, 0);
+    console.log();
+    const length = await chooseOption(rl, "Select length:", LENGTH_OPTIONS, 1);
 
-    const responseConfig = normalizeResponseConfig({
-      attitude,
-      tone,
-      language: "en"
-    });
-
+    const responseConfig = normalizeResponseConfig({ attitude, tone, language: "en" });
     const interventionMode = mapResponseAttitudeToInterventionMode(responseConfig.attitude);
     const poqoResult = await runPoqo(prompt, DEFAULT_PROFILE_ID);
     const runtimeGuide = await loadRuntimeGuide(DEFAULT_PROFILE_ID);
     const effectiveDomainAnchor = resolveDomainAnchor(prompt, null);
     const poqoBrief = buildPoqoBrief(poqoResult, runtimeGuide, responseConfig, effectiveDomainAnchor);
     const framePreservingDirect = isFramePreservingDirect(poqoResult.analysis, poqoResult.move);
-    const modelStatus = getModelStatus();
+    const modelStatus = getModelStatus(getTryModelConfig(length));
 
     console.log();
     console.log(`Selected attitude: ${responseConfig.attitude}`);
     console.log(`Selected tone: ${responseConfig.tone}`);
+    console.log(`Selected length: ${length}`);
     console.log(`Output language: ${responseConfig.language}`);
     console.log();
 
@@ -111,8 +115,10 @@ async function main(): Promise<void> {
       framePreservingDirect,
       interventionMode,
       responseConfig,
-      domainAnchor: effectiveDomainAnchor
-    });
+      domainAnchor: effectiveDomainAnchor,
+      responseSurface: "live-brief",
+      responseLength: length
+    }, getTryModelConfig(length));
 
     console.log("poqo response:");
     console.log(modelResult.responseText);

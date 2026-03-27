@@ -13,7 +13,7 @@ const MAX_LIST_ITEM_LENGTH = 40;
 const CONTROL_PATTERN = /\b(route|routing|move|direct|narrow|prove|proof|domain|anchor|constitution|profile|override|threshold|judge|judgment|law)\b/i;
 
 export const DEFAULT_RESPONSE_CONFIG: ResponseConfig = {
-  attitude: "normal",
+  attitude: "balanced",
   tone: "neutral",
   language: "en",
   customToneNotes: "",
@@ -52,7 +52,7 @@ function sanitizeList(values: unknown): string[] {
       continue;
     }
 
-    if (normalized.some((existing) => existing.toLowerCase() === item.toLowerCase())) {
+    if (normalized.some((existing) => existing.toLowerCase() == item.toLowerCase())) {
       continue;
     }
 
@@ -66,20 +66,28 @@ function sanitizeList(values: unknown): string[] {
   return normalized;
 }
 
-function isResponseAttitude(value: unknown): value is ResponseAttitude {
-  return value === "normal" || value === "challenge" || value === "difficult";
+function normalizeResponseAttitude(value: unknown): ResponseAttitude {
+  if (value === "challenging" || value === "challenge" || value === "difficult") {
+    return "challenging";
+  }
+
+  if (value === "balanced" || value === "normal") {
+    return "balanced";
+  }
+
+  return DEFAULT_RESPONSE_CONFIG.attitude;
 }
 
 function normalizeResponseTone(value: unknown): ResponseTone {
   if (value === "direct" || value === "sharp") {
-    return value;
+    return "direct";
   }
 
-  if (value === "warm") {
+  if (value === "neutral" || value === "warm") {
     return "neutral";
   }
 
-  return "neutral";
+  return DEFAULT_RESPONSE_CONFIG.tone;
 }
 
 function isResponseLanguage(value: unknown): value is ResponseLanguage {
@@ -87,19 +95,19 @@ function isResponseLanguage(value: unknown): value is ResponseLanguage {
 }
 
 export function mapResponseAttitudeToInterventionMode(attitude: ResponseAttitude): InterventionMode {
-  return attitude === "normal" ? "calm" : attitude === "challenge" ? "counter" : "blunt";
+  return attitude === "balanced" ? "calm" : "blunt";
 }
 
 function mapLegacyInterventionMode(mode: InterventionMode): ResponseAttitude {
-  return mode === "calm" ? "normal" : mode === "counter" ? "challenge" : "difficult";
+  return mode === "calm" ? "balanced" : "challenging";
 }
 
 export function normalizeResponseConfig(
   input?: ResponseConfigInput | null,
   legacyInterventionMode?: InterventionMode | null
 ): ResponseConfig {
-  const attitude = isResponseAttitude(input?.attitude)
-    ? input.attitude
+  const attitude = input?.attitude
+    ? normalizeResponseAttitude(input.attitude)
     : legacyInterventionMode
       ? mapLegacyInterventionMode(legacyInterventionMode)
       : DEFAULT_RESPONSE_CONFIG.attitude;

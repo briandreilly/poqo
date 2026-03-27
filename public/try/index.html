@@ -92,7 +92,7 @@
     <main>
       <div>
         <h1>Try poqo</h1>
-        <p>Enter a claim, choose attitude and tone, and see poqo respond through the existing live path.</p>
+        <p>Enter a claim, choose attitude, tone, and length, and see poqo respond through the existing live path.</p>
       </div>
 
       <section class="panel">
@@ -104,9 +104,8 @@
         <div>
           <label for="attitude">Attitude</label>
           <select id="attitude">
-            <option value="normal" selected>normal</option>
-            <option value="challenge">challenge</option>
-            <option value="difficult">difficult</option>
+            <option value="balanced" selected>balanced</option>
+            <option value="challenging">challenging</option>
           </select>
         </div>
         <div>
@@ -114,12 +113,12 @@
           <select id="tone">
             <option value="neutral" selected>neutral</option>
             <option value="direct">direct</option>
-            <option value="sharp">sharp</option>
           </select>
         </div>
         <div>
           <label for="length">Length</label>
           <select id="length">
+            <option value="reaction">reaction</option>
             <option value="short" selected>short</option>
             <option value="medium">medium</option>
             <option value="long">long</option>
@@ -178,8 +177,8 @@
           }
 
           meta.textContent = payload.mode === "poqo-plus-model"
-            ? `${payload.modelName} via ${payload.modelProvider} · ${payload.length}`
-            : `Brief poqo fallback · ${payload.length}`;
+            ? `${payload.modelName} via ${payload.modelProvider} · ${payload.attitude} · ${payload.tone} · ${payload.length}`
+            : `Brief poqo fallback · ${payload.attitude} · ${payload.tone} · ${payload.length}`;
           output.textContent = payload.response;
         } catch (error) {
           meta.textContent = "";

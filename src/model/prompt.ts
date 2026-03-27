@@ -26,11 +26,7 @@ function buildDomainConstraint(domainAnchor: DomainAnchor): string | null {
 
 function buildToneConstraint(tone: ModelExecutionInput["responseConfig"]["tone"]): string {
   if (tone === "direct") {
-    return "Response tone: direct. Keep the wording concise and minimal without changing the reasoning.";
-  }
-
-  if (tone === "sharp") {
-    return "Response tone: sharp. Keep the wording firm and low-patience without changing the reasoning or hardening the chosen attitude on your own.";
+    return "Response tone: direct. Keep the wording concise, firm, and minimally cushioned without changing the reasoning.";
   }
 
   return "Response tone: neutral. Keep the wording balanced and professional.";
@@ -38,11 +34,7 @@ function buildToneConstraint(tone: ModelExecutionInput["responseConfig"]["tone"]
 
 function buildTryToneInstruction(tone: ModelExecutionInput["responseConfig"]["tone"]): string {
   if (tone === "direct") {
-    return "Use shorter clauses, fewer qualifiers, and compressed wording.";
-  }
-
-  if (tone === "sharp") {
-    return "Use firmer, harder-edged wording with less cushioning when you disagree.";
+    return "Use shorter clauses, fewer qualifiers, and firmer wording with minimal cushioning.";
   }
 
   return "Use plain, professional baseline wording.";
@@ -55,11 +47,9 @@ function buildLanguageConstraint(language: ModelExecutionInput["responseConfig"]
 function buildResponseConfigConstraint(input: ModelExecutionInput): string {
   const config = input.responseConfig;
 
-  const attitudeConstraint = config.attitude === "normal"
-    ? "Response attitude: normal. Stay cooperative, clarifying, and low-friction."
-    : config.attitude === "challenge"
-      ? "Response attitude: challenge. Push for definition, test weak claims, and ask for support when needed."
-      : "Response attitude: difficult. Reject weak framing earlier, redirect faster, and keep a low tolerance for weak claims.";
+  const attitudeConstraint = config.attitude === "balanced"
+    ? "Response attitude: balanced. Stay cooperative, nuanced, and lower-friction."
+    : "Response attitude: challenging. Apply stronger pressure, reject weak framing sooner, and keep a lower tolerance for overbroad claims.";
 
   return [
     attitudeConstraint,
@@ -101,12 +91,16 @@ function buildResponseConfigTaskLines(input: ModelExecutionInput): string[] {
 }
 
 function buildTryLengthInstruction(length: ModelExecutionInput["responseLength"]): string {
+  if (length === "reaction") {
+    return "Respond in 2 words maximum.";
+  }
+
   if (length === "medium") {
     return "Respond in exactly 2 sentences. No third sentence.";
   }
 
   if (length === "long") {
-    return "Respond in exactly 4 sentences. No fifth sentence.";
+    return "Respond in no more than 100 words. Keep it answer-only and readable.";
   }
 
   return "Respond in exactly 1 sentence. No second sentence and no fragments.";
@@ -128,17 +122,13 @@ function classifyTryInputShape(prompt: string): "question" | "statement" {
 }
 
 function buildTryAttitudeInstruction(input: ModelExecutionInput): string {
-  if (input.responseConfig.attitude === "challenge") {
-    return input.responseLength === "short"
-      ? "Keep the answer firmer and more pressuring, and include one brief boundary marker so the challenge is visible in a single sentence."
-      : "Keep the answer firmer and more pressuring, but still clean and answer-only.";
+  if (input.responseConfig.attitude === "challenging") {
+    return input.responseLength === "reaction"
+      ? "Keep the answer compressed, firmer, and quicker to reject weak framing."
+      : "Keep the answer firmer, more pressuring, and quicker to reject weak or overbroad framing, but still clean and answer-only.";
   }
 
-  if (input.responseConfig.attitude === "difficult") {
-    return "Keep the answer low-tolerance, more resistant, and more willing to reject weak framing directly, but still clean and answer-only.";
-  }
-
-  return "Keep the answer cooperative, clarifying, and low-friction.";
+  return "Keep the answer balanced, nuanced, and lower-friction.";
 }
 
 function buildTryAnswerObjective(input: ModelExecutionInput): string {
@@ -196,7 +186,7 @@ function buildTryAnswerPrompt(input: ModelExecutionInput): ModelExecutionPrompt 
       "- Do NOT use the phrases \"Broken down\", \"Implications\", or \"A stronger version\"",
       "- Do NOT use numbered lists or labels",
       buildTryLengthInstruction(input.responseLength),
-      "- Do not exceed the sentence limit under any circumstance.",
+      "- Respect the active length bucket under any circumstance.",
       "- If the input is a statement, return a statement by default.",
       "- For declarative inputs, you MUST respond with a declarative statement.",
       "- Do NOT ask the user a question for a declarative input.",

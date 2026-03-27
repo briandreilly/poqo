@@ -14,13 +14,17 @@ export type ModelProvider = "openai";
 
 export type InterventionMode = "calm" | "counter" | "blunt";
 
-export type ResponseAttitude = "normal" | "challenge" | "difficult";
+export type ResponseAttitude = "balanced" | "challenging";
 
-export type ResponseTone = "neutral" | "direct" | "sharp";
+export type LegacyResponseAttitude = "normal" | "challenge" | "difficult";
+
+export type ResponseTone = "neutral" | "direct";
+
+export type LegacyResponseTone = "warm" | "sharp";
 
 export type ResponseLanguage = "en" | "es";
 
-export type ResponseLength = "short" | "medium" | "long";
+export type ResponseLength = "reaction" | "short" | "medium" | "long";
 
 export type DomainAnchor = "minecraft" | "product-ui" | "healthcare" | null;
 
@@ -102,8 +106,8 @@ export interface ResponseConfig {
 }
 
 export interface ResponseConfigInput {
-  attitude?: ResponseAttitude;
-  tone?: ResponseTone;
+  attitude?: ResponseAttitude | LegacyResponseAttitude;
+  tone?: ResponseTone | LegacyResponseTone;
   language?: ResponseLanguage;
   customToneNotes?: string;
   customBehaviorNotes?: string;

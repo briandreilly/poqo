@@ -112,7 +112,7 @@ async function assertModelSeamPreservesDecidedJudgment(): Promise<void> {
     framePreservingDirect: false,
     interventionMode: "counter",
     responseConfig: {
-      attitude: "challenge",
+      attitude: "challenging",
       tone: "direct",
       language: "en",
       customToneNotes: "",
@@ -129,7 +129,7 @@ async function assertModelSeamPreservesDecidedJudgment(): Promise<void> {
   assert.equal(JSON.stringify(input), snapshot, "model seam must not mutate already-decided judgment input");
   assert.match(prompt.taskText, /move: DIRECT/, "model seam must preserve the chosen move in the execution payload");
   assert.match(prompt.taskText, /proofType: none/, "model seam must preserve the chosen proof basis in the execution payload");
-  assert.match(prompt.taskText, /responseAttitude: challenge/, "model seam must preserve the configured response attitude in the execution payload");
+  assert.match(prompt.taskText, /responseAttitude: challenging/, "model seam must preserve the configured response attitude in the execution payload");
   assert.match(prompt.taskText, /responseTone: direct/, "model seam must preserve the configured response tone in the execution payload");
   assert.match(prompt.taskText, /responseLanguage: en/, "model seam must preserve the configured response language in the execution payload");
   assert.match(prompt.taskText, /domainAnchor: minecraft/, "model seam must preserve the chosen domain anchor in the execution payload");
