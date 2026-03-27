@@ -117,6 +117,46 @@ export interface ResponseConfigInput {
 
 export type ResponseSurface = "default" | "live-brief";
 
+export type ConversationStance = "support" | "contradict" | "refine" | "unrelated";
+
+export type ConversationSpeakerType = "user" | "poqo" | "external_ai" | "other";
+
+export interface ConversationTurnEntry {
+  speakerId: string;
+  speakerType: ConversationSpeakerType;
+  speakerLabel?: string;
+  text: string;
+  compactText: string;
+  stance: ConversationStance;
+  targetsActiveClaim?: boolean;
+}
+
+export interface ConversationTurnInput {
+  speakerId?: string | null;
+  speakerType?: ConversationSpeakerType | null;
+  speakerLabel?: string | null;
+  text: string;
+}
+
+export interface ConversationState {
+  activeClaim: string;
+  runningSummary: string;
+  turnLog: ConversationTurnEntry[];
+}
+
+export interface ConversationUpdate {
+  state: ConversationState;
+  latestTurn: ConversationTurnEntry;
+  activeClaimChanged: boolean;
+}
+
+export interface RunPoqoOptions {
+  conversationState?: ConversationState | null;
+  speakerId?: string;
+  speakerType?: ConversationSpeakerType;
+  speakerLabel?: string;
+}
+
 export interface ModelExecutionInput {
   prompt: string;
   runtimeGuide: RuntimeGuide;
@@ -230,6 +270,10 @@ export interface PoqoResult {
   finalResponse: string;
   analysis: RequestAnalysis;
   proof: ProofSelection;
+  conversationState: ConversationState;
+  conversationLogLine: string;
+  conversationStance: ConversationStance;
+  activeClaimChanged: boolean;
 }
 
 export interface PromptCase {
@@ -307,6 +351,10 @@ export interface HarnessRequest {
   interventionMode?: InterventionMode;
   responseConfig?: ResponseConfigInput;
   domainContextAnchor?: DomainAnchor | null;
+  conversationState?: ConversationState | null;
+  speakerId?: string;
+  speakerType?: ConversationSpeakerType;
+  speakerLabel?: string;
 }
 
 export interface HarnessStatus {
@@ -336,4 +384,5 @@ export interface HarnessResponse {
   poqoFinishedAt: string;
   modelStartedAt: string | null;
   modelFinishedAt: string | null;
+  conversationState?: ConversationState;
 }

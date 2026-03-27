@@ -13,6 +13,7 @@ import { resolveDomainAnchor } from "../domain-anchor.js";
 import { buildPoqoBrief } from "./harness-brief.js";
 import { buildTryResponse, isValidTryRequest } from "./try-response.js";
 import type {
+  ConversationState,
   HarnessRequest,
   HarnessResponse,
   HarnessStatus,
@@ -64,7 +65,12 @@ async function buildHarnessResponse(body: HarnessRequest): Promise<HarnessRespon
   const interventionMode: InterventionMode = mapResponseAttitudeToInterventionMode(responseConfig.attitude);
   const modelStatus = getModelStatus();
   const poqoStartedAt = new Date().toISOString();
-  const poqoResult = await runPoqo(body.prompt, body.profileId);
+  const poqoResult = await runPoqo(body.prompt, body.profileId, {
+    conversationState: body.conversationState ?? null,
+    speakerId: body.speakerId,
+    speakerType: body.speakerType,
+    speakerLabel: body.speakerLabel
+  });
   const poqoFinishedAt = new Date().toISOString();
   // Keep the harness in the same order as the engine: routing and proof first,
   // then load the presentation overlay for briefing and final answer shaping.
@@ -91,7 +97,8 @@ async function buildHarnessResponse(body: HarnessRequest): Promise<HarnessRespon
     poqoStartedAt,
     poqoFinishedAt,
     modelStartedAt: null,
-    modelFinishedAt: null
+    modelFinishedAt: null,
+    conversationState: poqoResult.conversationState
   };
 
   if (body.mode === "poqo-plus-model") {
@@ -176,6 +183,10 @@ async function handler(request: IncomingMessage, response: ServerResponse): Prom
     const body = (await readJsonBody(request)) as {
       profileId?: ProfileId;
       prompt?: string;
+      conversationState?: ConversationState | null;
+      speakerId?: string;
+      speakerType?: "user" | "poqo" | "external_ai" | "other";
+      speakerLabel?: string;
     };
 
     if (!body.profileId || !body.prompt) {
@@ -183,7 +194,12 @@ async function handler(request: IncomingMessage, response: ServerResponse): Prom
       return;
     }
 
-    const result = await runPoqo(body.prompt, body.profileId as ProfileId);
+    const result = await runPoqo(body.prompt, body.profileId as ProfileId, {
+      conversationState: body.conversationState ?? null,
+      speakerId: body.speakerId,
+      speakerType: body.speakerType,
+      speakerLabel: body.speakerLabel
+    });
     sendJson(response, result);
     return;
   }
@@ -215,7 +231,11 @@ async function handler(request: IncomingMessage, response: ServerResponse): Prom
       mode: body.mode,
       interventionMode: body.interventionMode ?? "calm",
       responseConfig: body.responseConfig,
-      domainContextAnchor: typeof body.domainContextAnchor === "string" ? body.domainContextAnchor : null
+      domainContextAnchor: typeof body.domainContextAnchor === "string" ? body.domainContextAnchor : null,
+      conversationState: body.conversationState ?? null,
+      speakerId: body.speakerId,
+      speakerType: body.speakerType,
+      speakerLabel: body.speakerLabel
     });
 
     sendJson(response, harnessResponse);

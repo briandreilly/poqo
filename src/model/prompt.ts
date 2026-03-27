@@ -92,18 +92,18 @@ function buildResponseConfigTaskLines(input: ModelExecutionInput): string[] {
 
 function buildTryLengthInstruction(length: ModelExecutionInput["responseLength"]): string {
   if (length === "reaction") {
-    return "Respond in 2 words maximum.";
+    return "Respond in 2 words maximum. Make it sound like a natural human reaction, not a classifier label or internal tag.";
   }
 
   if (length === "medium") {
-    return "Respond in exactly 2 sentences. No third sentence.";
+    return "Respond in exactly 2 sentences. Keep it concise and controlled, with no extra elaboration, and stay within about 30 to 35 words total.";
   }
 
   if (length === "long") {
-    return "Respond in no more than 100 words. Keep it answer-only and readable.";
+    return "Respond with a fully developed answer in 50 to 100 words. Keep it answer-only, and include the core reasoning and limits without turning it into a breakdown.";
   }
 
-  return "Respond in exactly 1 sentence. No second sentence and no fragments.";
+  return "Respond in a single sentence under 10 words. Give a direct answer only, with no filler and no extra clause.";
 }
 
 function classifyTryInputShape(prompt: string): "question" | "statement" {

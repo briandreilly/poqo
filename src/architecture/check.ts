@@ -6,6 +6,7 @@ import { loadCoreConstitution, loadRuntimeGuide } from "../constitution/loader.j
 import { runPoqo } from "../engine.js";
 import { interpretInput } from "../interpreter/interpreter.js";
 import { buildModelExecutionPrompt } from "../model/prompt.js";
+import { updateConversationState } from "../summary/state.js";
 import { selectProof } from "../proof/selector.js";
 import { routeJudgment } from "../router/router.js";
 import type { DomainAnchor, ModelExecutionInput, Move, ProfileId, ProofType } from "../types.js";
@@ -136,11 +137,74 @@ async function assertModelSeamPreservesDecidedJudgment(): Promise<void> {
   assert.match(prompt.taskText, /Routing explanation: DIRECT because the question is short, specific, and answer-ready\./, "model seam must preserve the routing explanation instead of rewriting it");
 }
 
+function assertConversationSummaryLayer(): void {
+  const claim = "Barry Bonds should not be in the Hall of Fame because of PED use.";
+
+  let update = updateConversationState(null, {
+    speakerId: "user-1",
+    speakerType: "user",
+    text: claim
+  });
+  assert.equal(update.state.activeClaim, claim, "first meaningful external turn should set the active claim");
+  assert.equal(update.latestTurn.speakerId, "user-1", "first turn should preserve speaker identity");
+  assert.equal(update.latestTurn.speakerType, "user", "first turn should preserve speaker type");
+  assert.equal(update.latestTurn.stance, "support", "first active-claim turn should align with the baseline claim");
+
+  update = updateConversationState(update.state, {
+    speakerId: "poqo",
+    speakerType: "poqo",
+    text: "Bonds should not be in the HOF based on PEDs."
+  });
+  assert.equal(update.latestTurn.speakerId, "poqo", "poqo turns should keep poqo identity");
+  assert.equal(update.latestTurn.stance, "support", "poqo support should be labeled support");
+
+  update = updateConversationState(update.state, {
+    speakerId: "user-1",
+    speakerType: "user",
+    text: "Actually the Hall should focus on greatness, not character."
+  });
+  assert.ok(
+    update.latestTurn.stance === "refine" || update.latestTurn.stance === "contradict",
+    "user stance shifts should register as refine or contradict"
+  );
+  assert.match(update.state.runningSummary, /user-1/, "running summary should preserve speaker identity");
+
+  update = updateConversationState(update.state, {
+    speakerId: "ai-2",
+    speakerType: "external_ai",
+    text: "Bonds belongs in the Hall because his achievements still meet the standard."
+  });
+  assert.equal(update.latestTurn.speakerId, "ai-2", "external AI turns should keep their own identity");
+  assert.equal(update.latestTurn.stance, "contradict", "opposing external AI turn should be labeled contradict");
+
+  update = updateConversationState(update.state, {
+    speakerId: "poqo",
+    speakerType: "poqo",
+    text: "That shifts the argument from character judgment to Hall standards."
+  });
+  assert.equal(update.latestTurn.stance, "refine", "poqo boundary-setting turn should be labeled refine");
+  assert.match(update.state.runningSummary, /ai-2/, "running summary should preserve non-poqo participants");
+  assert.match(update.state.runningSummary, /poqo/, "running summary should preserve poqo identity too");
+
+  update = updateConversationState(update.state, {
+    speakerId: "user-2",
+    speakerType: "user",
+    text: "Oak planks are a strong default block in Minecraft."
+  });
+  assert.equal(update.latestTurn.speakerId, "user-2", "new participant should not collapse into the first user identity");
+  assert.equal(update.latestTurn.stance, "unrelated", "topic-shift turn should register as unrelated to the previous claim");
+  assert.equal(update.activeClaimChanged, true, "clearly different external turns should replace the active claim");
+  assert.equal(update.state.activeClaim, "Oak planks are a strong default block in Minecraft.", "active claim should shift on topic change");
+  assert.equal(update.state.turnLog.length, 1, "turn log should rotate around the new active claim");
+  assert.equal(update.state.turnLog[0].speakerId, "user-2", "rotated turn log should preserve the new speaker identity");
+}
+
 async function main(): Promise<void> {
   await assertSingleConstitutionSource();
   await assertPromptGuideIsDistilled();
   await assertArchitectureBoundaryCases();
   await assertModelSeamPreservesDecidedJudgment();
+  assertConversationSummaryLayer();
   console.log("architecture boundary checks passed");
 }
 

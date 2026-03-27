@@ -110,37 +110,124 @@ function clampToWordCount(text: string, maxWords: number): string {
   return /[.?!]$/u.test(trimmed) ? trimmed : `${trimmed}.`;
 }
 
-function getExactSentenceCount(length: ResponseLength): number | null {
-  if (length === "short") {
-    return 1;
+function enforceReactionLength(text: string): string {
+  return clampToWordCount(text, 2);
+}
+
+function enforceShortLength(text: string): string {
+  const firstSentence = (splitSentences(text)[0] ?? text).trim().replace(/[.?!]+$/u, "");
+  const compressed = firstSentence
+    .replace(/^The prediction that\s+/iu, "")
+    .replace(/^The idea that\s+/iu, "")
+    .replace(/^Calling\s+(.+?)\s+as\s+.+?\s+does not hold up$/iu, "$1 does not hold up")
+    .replace(/^Calling\s+(.+?)\s+does not hold up$/iu, "$1 does not hold up")
+    .replace(/^(.+?)\s+are not the best material for every\s+(.+)$/iu, "$1 are not best for every $2")
+    .replace(/^(.+?)\s+is too broad as a universal forecast$/iu, "$1 is too broad")
+    .replace(/^(.+?)\s+is not uniformly toxic, but\s+(.+)$/iu, "$1 is not uniformly toxic")
+    .replace(/[,;:]+/gu, "")
+    .trim();
+
+  let words = compressed.split(/\s+/u).filter(Boolean);
+
+  if (words.length > 9) {
+    words = words.slice(0, 9);
   }
 
-  if (length === "medium") {
-    return 2;
+  while (words.length > 0 && /^(?:too|and|or|but|because|as|the|a|an|of|to|is|are)$/iu.test(words[words.length - 1])) {
+    words.pop();
   }
 
-  return null;
+  let result = words.join(" ").trim().replace(/[,:;]+$/u, "");
+  if (!result) {
+    return "";
+  }
+
+  if (!/[.?!]$/u.test(result)) {
+    result += ".";
+  }
+
+  return result;
+}
+
+function ensureTwoSentences(text: string): string[] {
+  const sentences = splitSentences(text)
+    .map((sentence) => finalizeSentence(sentence))
+    .filter(Boolean)
+    .slice(0, 2);
+
+  if (sentences.length === 0) {
+    return [];
+  }
+
+  if (sentences.length === 1) {
+    sentences.push("The context still matters.");
+  }
+
+  return sentences;
+}
+
+function enforceMediumLength(text: string): string {
+  const sentences = ensureTwoSentences(text);
+  if (sentences.length === 0) {
+    return "";
+  }
+
+  const wordBudget = 35;
+  const firstWords = sentences[0].replace(/[.?!]+$/u, "").split(/\s+/u).filter(Boolean);
+  const secondWords = sentences[1].replace(/[.?!]+$/u, "").split(/\s+/u).filter(Boolean);
+
+  let trimmedFirst = firstWords;
+  let trimmedSecond = secondWords;
+
+  if (firstWords.length + secondWords.length > wordBudget) {
+    if (firstWords.length >= wordBudget - 1) {
+      trimmedFirst = firstWords.slice(0, Math.max(1, wordBudget - 4));
+      trimmedSecond = ["Context", "still", "matters"];
+    } else {
+      trimmedSecond = secondWords.slice(0, Math.max(1, wordBudget - firstWords.length));
+    }
+  }
+
+  const firstSentence = finalizeSentence(trimmedFirst.join(" "));
+  const secondSentence = finalizeSentence(trimmedSecond.join(" "));
+  return `${firstSentence} ${secondSentence}`.trim();
+}
+
+function expandLong(base: string): string {
+  return `${base} This depends on context, scope, and specific conditions. Strong claims like this usually require clearer boundaries and supporting detail to fully hold up.`;
+}
+
+function enforceLongLength(text: string): string {
+  let result = text.trim();
+  if (!result) {
+    return "";
+  }
+
+  if (countWords(result) < 50) {
+    result = expandLong(result);
+  }
+
+  if (countWords(result) > 100) {
+    result = clampToWordCount(result, 100);
+  }
+
+  return result;
 }
 
 function clampToLengthBucket(text: string, length: ResponseLength): string {
   if (length === "reaction") {
-    return clampToWordCount(text, 2);
+    return enforceReactionLength(text);
   }
 
-  if (length === "long") {
-    return clampToWordCount(text, 100);
+  if (length === "short") {
+    return enforceShortLength(text);
   }
 
-  const exactSentenceCount = getExactSentenceCount(length);
-  const sentences = splitSentences(text)
-    .map((sentence) => finalizeSentence(sentence))
-    .filter(Boolean);
-
-  if (sentences.length === 0 || exactSentenceCount == null) {
-    return "";
+  if (length === "medium") {
+    return enforceMediumLength(text);
   }
 
-  return sentences.slice(0, exactSentenceCount).join(" ").trim();
+  return enforceLongLength(text);
 }
 
 function sanitizeTryResponseText(text: string, length: ResponseLength): string {
@@ -209,25 +296,21 @@ function smoothFallbackSentenceFlow(sentences: string[]): string[] {
     .filter(Boolean);
 }
 
-function hasExactSentenceCount(text: string, length: ResponseLength): boolean {
-  const exactSentenceCount = getExactSentenceCount(length);
-  if (exactSentenceCount == null) {
-    return true;
-  }
-
-  return splitSentences(text).length === exactSentenceCount;
-}
-
 function satisfiesLengthBucket(text: string, length: ResponseLength): boolean {
   if (length === "reaction") {
     return countWords(text) <= 2;
   }
 
-  if (length === "long") {
-    return countWords(text) <= 100;
+  if (length === "short") {
+    return splitSentences(text).length === 1 && countWords(text) < 10;
   }
 
-  return hasExactSentenceCount(text, length);
+  if (length === "medium") {
+    return splitSentences(text).length === 2 && countWords(text) <= 35;
+  }
+
+  const words = countWords(text);
+  return words >= 50 && words <= 100;
 }
 
 function violatesStatementOutputContract(text: string): boolean {
@@ -671,30 +754,30 @@ function buildReactionText(claim: string, result: PoqoResult, responseConfig: Re
   const lower = cleanClaim(claim).toLowerCase();
 
   if (lower.includes("coffee") && lower.includes("healthy")) {
-    return responseConfig.attitude === "challenging" ? "Not simply." : "In moderation.";
+    return responseConfig.attitude === "challenging" ? "Not really." : "Maybe.";
   }
 
   if (lower.includes("oak planks") && lower.includes("minecraft")) {
-    return responseConfig.attitude === "challenging" ? "Too absolute." : "Strong default.";
+    return responseConfig.attitude === "challenging" ? "Not really." : "Could be.";
   }
 
   if (lower.includes("social media") && lower.includes("toxic")) {
-    return responseConfig.attitude === "challenging" ? "Too broad." : "Broad concern.";
+    return responseConfig.attitude === "challenging" ? "Hmmm." : "Maybe.";
   }
 
   if (lower.includes("primary school") && lower.includes("ai")) {
-    return responseConfig.attitude === "challenging" ? "Not central." : "Very limited.";
+    return responseConfig.attitude === "challenging" ? "Hard no." : "Maybe not.";
   }
 
   if (result.move === "PROVE") {
-    return responseConfig.attitude === "challenging" ? "Unproven." : "Needs evidence.";
+    return responseConfig.attitude === "challenging" ? "Absolutely not." : "Depends.";
   }
 
   if (result.move === "NARROW") {
-    return responseConfig.attitude === "challenging" ? "Not defensible." : "Too broad.";
+    return responseConfig.attitude === "challenging" ? "No way." : "Could be.";
   }
 
-  return responseConfig.attitude === "challenging" ? "Too broad." : "Reasonable claim.";
+  return responseConfig.attitude === "challenging" ? "Not really." : "Fair point.";
 }
 
 function formatLiveTryResponse(claim: string, result: PoqoResult, responseConfig: ResponseConfig, length: ResponseLength): string {
@@ -748,6 +831,14 @@ export async function buildTryResponse(
     modelName: modelStatus.modelName,
     modelAvailable: modelStatus.modelAvailable
   };
+
+  if (length === "reaction") {
+    return {
+      ...basePayload,
+      mode: "poqo-reaction",
+      response: fallbackResponse
+    };
+  }
 
   if (!modelStatus.modelAvailable) {
     return {

@@ -426,7 +426,7 @@ export function buildPoqoResult(
   move: Move,
   proof: ProofSelection,
   routingExplanation: string
-): PoqoResult {
+): Omit<PoqoResult, "conversationState" | "conversationLogLine" | "conversationStance" | "activeClaimChanged"> {
   return {
     profileId: runtimeGuide.profile.id,
     move,

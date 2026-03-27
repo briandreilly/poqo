@@ -131,8 +131,7 @@
       </section>
 
       <section class="panel">
-        <p id="meta" style="margin-bottom: 10px; color: #655d53;">Submit a claim to see the response.</p>
-        <pre id="output"></pre>
+        <pre id="output">Submit a claim to see the response.</pre>
       </section>
     </main>
 
@@ -143,19 +142,16 @@
       const lengthSelect = document.getElementById("length");
       const submitButton = document.getElementById("submit");
       const output = document.getElementById("output");
-      const meta = document.getElementById("meta");
 
       async function runTry() {
         const claim = claimInput.value.trim();
         if (!claim) {
-          meta.textContent = "";
           output.textContent = "Enter a claim first.";
           return;
         }
 
         submitButton.disabled = true;
         submitButton.textContent = "Running...";
-        meta.textContent = "";
         output.textContent = "Running poqo...";
 
         try {
@@ -176,12 +172,8 @@
             throw new Error(payload.error || "Request failed.");
           }
 
-          meta.textContent = payload.mode === "poqo-plus-model"
-            ? `${payload.modelName} via ${payload.modelProvider} · ${payload.attitude} · ${payload.tone} · ${payload.length}`
-            : `Brief poqo fallback · ${payload.attitude} · ${payload.tone} · ${payload.length}`;
           output.textContent = payload.response;
         } catch (error) {
-          meta.textContent = "";
           output.textContent = error.message || "Request failed.";
         } finally {
           submitButton.disabled = false;
